@@ -9,48 +9,17 @@ import net.minestom.server.entity.metadata.display.ItemDisplayMeta;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.timer.TaskSchedule;
 
 public final class CameraAnchor {
     // camera rotation when the fullscreen cursor reaches the screen edge
     public static final float MAX_YAW_OFFSET = 90.0f;
     public static final float MAX_PITCH_OFFSET = 90.0f;
-    public static final float BASE_SMOOTHING = 0.16f;
-    public static final float MAX_SMOOTHING = 0.70f;
-    public static final float MIN_DISTANCE = 2.0f;
-    public static final float MAX_DISTANCE = 25.0f;
+    public static final float MOVE_SPEED = 1.8f;
+    public static final float ARRIVAL_FACTOR = 0.20f;
     private static final float LEAN_YAW_OFFSET = 90.0f;
     private static final Tag<Entity> anchor = Tag.Transient("cameraAnchor");
     private static final Tag<Float> baseYaw = Tag.Transient("baseYaw");
     private static final Tag<View> view = Tag.Transient("view");
-
-    private static float calculateProgress(View view) {
-        return calculateProgress(view.yaw, view.targetYaw, view.pitch, view.targetPitch);
-    }
-
-    static float calculateProgress(float currentYaw, float targetYaw, float currentPitch, float targetPitch) {
-        float deltaYaw = unwrapDelta(targetYaw - currentYaw);
-        float deltaPitch = targetPitch - currentPitch;
-        float distance = (float) Math.hypot(deltaYaw, deltaPitch);
-
-        if (distance <= MIN_DISTANCE) {
-            float base = BASE_SMOOTHING;
-            return base * base * (3.0F - 2.0F * base);
-        }
-
-        float t = Math.clamp((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE), 0.0F, 1.0F);
-        float smoothT = t * t * (3.0F - 2.0F * t);
-        float smoothing = BASE_SMOOTHING + (MAX_SMOOTHING - BASE_SMOOTHING) * smoothT;
-        return smoothing * smoothing * (3.0F - 2.0F * smoothing);
-    }
-
-    static float ease(float current, float target, float progress) {
-        float delta = unwrapDelta(target - current);
-        if (Math.abs(delta) < 0.01F) {
-            return target;
-        }
-        return current + delta * progress;
-    }
 
     private static float unwrapDelta(float delta) {
         while (delta > 180.0F) {
@@ -68,7 +37,7 @@ public final class CameraAnchor {
 
         display.editEntityMeta(ItemDisplayMeta.class, meta -> {
             meta.setItemStack(ItemStack.of(Material.AIR));
-            meta.setPosRotInterpolationDuration(3);
+            meta.setPosRotInterpolationDuration(5);
             meta.setHasNoGravity(true);
         });
 
@@ -78,11 +47,13 @@ public final class CameraAnchor {
 
         ClientView.reset(player);
         player.setTag(CameraAnchor.baseYaw, mainPosition.yaw());
+        float initialYawOffset = getYawOffset(player);
+        float initialPitch = getPitchOffset(player);
         Pos startPos = mainPosition.withView(
-            unwrapDelta(mainPosition.yaw() + getYawOffset(player)),
-            getPitchOffset(player)
+            unwrapDelta(mainPosition.yaw() + initialYawOffset),
+            initialPitch
         );
-        player.setTag(CameraAnchor.view, new View(startPos));
+        player.setTag(CameraAnchor.view, new View(initialYawOffset, initialPitch));
 
         display.setInstance(player.getInstance(), startPos).thenRun(() -> {
             player.spectate(display);
@@ -108,9 +79,14 @@ public final class CameraAnchor {
             return;
         }
 
-        float baseYaw = player.getTag(CameraAnchor.baseYaw);
+        if (EmoteWheel.isOpen(player)) {
+            view.targetYawOffset = view.yawOffset;
+            view.targetPitch = view.pitch;
+            return;
+        }
+
         float leanYaw = calculateLeanYaw(player);
-        view.targetYaw = unwrapDelta(baseYaw + (leanYaw != 0.0f ? leanYaw : getYawOffset(player)));
+        view.targetYawOffset = leanYaw != 0.0f ? leanYaw : getYawOffset(player);
         view.targetPitch = getPitchOffset(player);
     }
 
@@ -123,17 +99,20 @@ public final class CameraAnchor {
 
         updateInput(player);
 
-        float progress = calculateProgress(view);
-
-        float yaw = ease(view.yaw, view.targetYaw, progress);
-        float pitch = ease(view.pitch, view.targetPitch, progress);
-        if (yaw == view.yaw && pitch == view.pitch) {
+        float deltaYaw = view.targetYawOffset - view.yawOffset;
+        float deltaPitch = view.targetPitch - view.pitch;
+        float distance = (float) Math.hypot(deltaYaw, deltaPitch);
+        if (distance < 0.001f) {
             return;
         }
-        view.yaw = unwrapDelta(yaw);
-        view.pitch = pitch;
 
-        anchor.teleport(anchor.getPosition().withView(view.yaw, view.pitch));
+        float step = Math.min(distance * ARRIVAL_FACTOR, MOVE_SPEED);
+        float scale = step / distance;
+        view.yawOffset += deltaYaw * scale;
+        view.pitch += deltaPitch * scale;
+
+        float baseYaw = player.getTag(CameraAnchor.baseYaw);
+        anchor.teleport(anchor.getPosition().withView(unwrapDelta(baseYaw + view.yawOffset), view.pitch));
     }
 
     /**
@@ -177,16 +156,16 @@ public final class CameraAnchor {
     }
 
     private static final class View {
-        private float yaw;
+        private float yawOffset;
         private float pitch;
-        private float targetYaw;
+        private float targetYawOffset;
         private float targetPitch;
 
-        private View(Pos pos) {
-            this.yaw = pos.yaw();
-            this.pitch = pos.pitch();
-            this.targetYaw = pos.yaw();
-            this.targetPitch = pos.pitch();
+        private View(float yawOffset, float pitch) {
+            this.yawOffset = yawOffset;
+            this.pitch = pitch;
+            this.targetYawOffset = yawOffset;
+            this.targetPitch = pitch;
         }
     }
 }

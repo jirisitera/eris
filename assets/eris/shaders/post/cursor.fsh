@@ -3,6 +3,7 @@
 
 // @formatter:off
 #include <minecraft:globals.glsl>
+#include <eris:emote_wheel.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
@@ -131,11 +132,22 @@ void main() {
     );
     sceneColor += (noise - 0.5) * 0.08 * NOISE_INTENSITY;
 
-    // Fullscreen cursor overlay
+    // Fullscreen overlays (emote wheel first, then cursor on top)
     vec2 lookAngles;
     if (getLookAngles(lookAngles)) {
-        vec2 cursorNdc = clamp(vec2(lookAngles.x / 90.0, lookAngles.y / 90.0), -1.0, 1.0);
-        vec2 cursorUv = vec2(0.5 + cursorNdc.x * 0.5, 0.5 + cursorNdc.y * 0.5);
+        float aspect = screenSize.x / screenSize.y;
+        vec2 cursorNdc = clamp(lookAngles / 90.0, -1.0, 1.0);
+
+        bool emoteWheelOpen = round(texelFetch(InSampler, ivec2(5, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 0.5;
+        if (emoteWheelOpen) {
+            vec2 cursorOffset = vec2(cursorNdc.x * aspect, -cursorNdc.y);
+            int hoveredSlice = getHoveredEmoteSlice(cursorOffset);
+            vec2 wheelUv = (texCoord - 0.5) * vec2(aspect, 1.0) / 0.30;
+            vec4 wheel = renderEmoteWheel(wheelUv, hoveredSlice);
+            sceneColor = mix(sceneColor, wheel.rgb, wheel.a);
+        }
+
+        vec2 cursorUv = 0.5 + cursorNdc * 0.5;
         vec2 fragTopLeft = vec2(gl_FragCoord.x, screenSize.y - gl_FragCoord.y);
         vec2 cursorOrigin = cursorUv * screenSize;
         float cursorScale = max(1.0, round(screenSize.y / 540.0));

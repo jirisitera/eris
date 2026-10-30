@@ -17,13 +17,17 @@ public final class CursorProbe {
     private static final Color BUFFER_COLOR = new Color(91, 126, 209);
     private static final Tag<ProbeState> TAG = Tag.Transient("cursorProbe");
 
-    private static ItemStack createProbe(int mouseYaw, int mousePitch, int rawYaw, int rawPitch) {
+    // Encodes angles and UI flags into the 8 custom-model-data colors read by cursor.fsh at row y=19
+    private static ItemStack createProbe(int mouseYaw, int mousePitch, int rawYaw, int rawPitch, boolean emoteWheelOpen) {
         return ItemStack.of(Material.ECHO_SHARD).withItemModel(ITEM_MODEL).withCustomModelData(List.of(), List.of(), List.of(), List.of(
             new Color(mouseYaw >>> 8, mouseYaw & 0xFF, mousePitch >>> 8),
             new Color(mousePitch & 0xFF, 91, 126),
             new Color(rawYaw >>> 8, rawYaw & 0xFF, rawPitch >>> 8),
             new Color(rawPitch & 0xFF, 91, 126),
-            BUFFER_COLOR, BUFFER_COLOR, BUFFER_COLOR, BUFFER_COLOR
+            BUFFER_COLOR,
+            new Color(emoteWheelOpen ? 255 : 0, 91, 126),
+            BUFFER_COLOR,
+            BUFFER_COLOR
         ));
     }
 
@@ -43,14 +47,17 @@ public final class CursorProbe {
         int mousePitch = encodeAngle(ClientView.mousePitch(player), 360.0F);
         int rawYaw = encodeAngle(wrapAngle(ClientView.yaw(player), 1440.0F), 1440.0F);
         int rawPitch = encodeAngle(ClientView.pitch(player), 180.0F);
+        boolean emoteWheelOpen = EmoteWheel.isOpen(player);
         long key = ((long) mouseYaw << 48) | ((long) mousePitch << 32) | ((long) rawYaw << 16) | rawPitch;
 
         ProbeState previous = player.getTag(CursorProbe.TAG);
-        if (previous != null && previous.key == key && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
+        if (previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
             return;
         }
-        ItemStack item = previous != null && previous.key == key ? previous.item : createProbe(mouseYaw, mousePitch, rawYaw, rawPitch);
-        player.setTag(CursorProbe.TAG, new ProbeState(key, item));
+        ItemStack item = (previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen)
+            ? previous.item
+            : createProbe(mouseYaw, mousePitch, rawYaw, rawPitch, emoteWheelOpen);
+        player.setTag(CursorProbe.TAG, new ProbeState(key, emoteWheelOpen, item));
 
         if (player.getEquipment(EquipmentSlot.OFF_HAND) != item) {
             player.setEquipment(EquipmentSlot.OFF_HAND, item);
@@ -77,6 +84,6 @@ public final class CursorProbe {
     public record ScreenPosition(float x, float y) {
     }
 
-    private record ProbeState(long key, ItemStack item) {
+    private record ProbeState(long key, boolean emoteWheelOpen, ItemStack item) {
     }
 }

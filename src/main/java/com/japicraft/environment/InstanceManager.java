@@ -6,6 +6,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.registry.RegistryKey;
@@ -23,7 +24,8 @@ public class InstanceManager {
         return instance;
     }
     public static void remove(Player player) {
-        MinecraftServer.getInstanceManager().unregisterInstance(player.getInstance());
+        Instance instance = player.getInstance();
+        MinecraftServer.getSchedulerManager().scheduleNextTick(() -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
     }
     public static void register() {
         MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> {

@@ -3,6 +3,7 @@ package com.japicraft.events;
 import com.japicraft.camera.Avatar;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.CursorProbe;
+import com.japicraft.camera.EmoteWheel;
 import com.japicraft.server.PostEffect;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
@@ -32,6 +33,7 @@ public final class PlayerSetupManager {
             CameraAnchor.detach(player);
             Avatar.detach(player);
             CursorProbe.detach(player);
+            EmoteWheel.detach(player);
         });
     }
 }

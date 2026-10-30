@@ -27,39 +27,50 @@ public final class ClientView {
     public static void reset(Player player) {
         player.setTag(MOUSE_YAW, 0.0F);
         player.setTag(MOUSE_PITCH, 0.0F);
-        player.setTag(TAG, new View(player.getPosition().yaw(), player.getPosition().pitch()));
+        player.removeTag(TAG);
     }
 
     public static boolean record(Player player, ClientPacket packet) {
-        View view = switch (packet) {
-            case ClientPlayerRotationPacket rotation -> new View(rotation.yaw(), rotation.pitch());
-            case ClientPlayerPositionAndRotationPacket move -> new View(move.position().yaw(), move.position().pitch());
-            default -> null;
-        };
-        if (view == null) {
-            return false;
-        }
         View previous = player.getTag(TAG);
+        float nextRawYaw;
+        float nextRawPitch;
+        float deltaYaw;
+        float deltaPitch;
+
+        switch (packet) {
+            case ClientPlayerRotationPacket rotation -> {
+                nextRawYaw = rotation.yaw();
+                nextRawPitch = rotation.pitch();
+                // ClientPlayerRotationPacket carries the client's raw unbounded yaw, so the difference never wraps at 180 degrees
+                deltaYaw = previous == null ? wrapDegrees(nextRawYaw) : nextRawYaw - previous.yaw();
+                deltaPitch = previous == null ? nextRawPitch : nextRawPitch - previous.pitch();
+            }
+            case ClientPlayerPositionAndRotationPacket move -> {
+                nextRawPitch = move.position().pitch();
+                deltaYaw = previous == null ? wrapDegrees(move.position().yaw()) : wrapDegrees(move.position().yaw() - previous.yaw());
+                deltaPitch = previous == null ? nextRawPitch : nextRawPitch - previous.pitch();
+                nextRawYaw = previous == null ? move.position().yaw() : previous.yaw() + deltaYaw;
+            }
+            default -> {
+                return false;
+            }
+        }
+
         Float mouseYaw = player.getTag(MOUSE_YAW);
         Float mousePitch = player.getTag(MOUSE_PITCH);
-        // accumulate per-packet deltas and clamp to the cursor bounds so offscreen movement never desyncs camera rotation
         float nextMouseYaw = Math.clamp(
-            previous == null || mouseYaw == null
-                ? wrapDegrees(view.yaw())
-                : mouseYaw + wrapDegrees(view.yaw() - previous.yaw()),
+            (mouseYaw == null ? 0.0F : mouseYaw) + deltaYaw,
             -MAX_CURSOR_YAW,
             MAX_CURSOR_YAW
         );
         float nextMousePitch = Math.clamp(
-            previous == null || mousePitch == null
-                ? view.pitch()
-                : mousePitch + (view.pitch() - previous.pitch()),
+            (mousePitch == null ? 0.0F : mousePitch) + deltaPitch,
             -MAX_CURSOR_PITCH,
             MAX_CURSOR_PITCH
         );
         player.setTag(MOUSE_YAW, nextMouseYaw);
         player.setTag(MOUSE_PITCH, nextMousePitch);
-        player.setTag(TAG, view);
+        player.setTag(TAG, new View(nextRawYaw, nextRawPitch));
         return true;
     }
 

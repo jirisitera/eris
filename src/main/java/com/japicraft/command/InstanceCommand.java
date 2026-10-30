@@ -12,7 +12,7 @@ import java.util.*;
 
 public class InstanceCommand extends Command {
     public InstanceCommand() {
-        super("instance", "instances");
+        super("instance");
         setCondition((sender, _) -> !(sender instanceof Player player) || player.getPermissionLevel() >= 4);
 
         setDefaultExecutor((sender, _) -> {
@@ -20,16 +20,13 @@ public class InstanceCommand extends Command {
 
             sender.sendMessage(Component.text("Loaded instances: " + instances.size(), NamedTextColor.GRAY));
             for (Instance instance : instances) {
-                String uuid = instance.getUuid().toString();
-                long entityCount = instance.getEntities().stream().filter(entity -> !entity.getEntityType().equals(EntityType.PLAYER)).count();
                 int playerCount = instance.getPlayers().size();
-                boolean isCurrent = sender instanceof Player p && p.getInstance() == instance;
+                long entityCount = instance.getEntities().size() - playerCount;
 
-                Component line = Component.text("- ", NamedTextColor.DARK_GRAY)
-                    .append(Component.text(uuid, isCurrent ? NamedTextColor.GREEN : NamedTextColor.AQUA))
-                    .append(Component.text(String.format(" (entities: %d, players: %d)", entityCount, playerCount), NamedTextColor.GRAY));
-
-                sender.sendMessage(line);
+                sender.sendMessage(Component.text("- ", NamedTextColor.DARK_GRAY)
+                    .append(Component.text(instance.getUuid().toString()).color(NamedTextColor.AQUA))
+                    .append(Component.text(String.format(" (players: %d, non-player entities: %d)", playerCount, entityCount)).color(NamedTextColor.GRAY))
+                );
             }
         });
     }

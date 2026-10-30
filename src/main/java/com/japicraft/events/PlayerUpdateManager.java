@@ -7,7 +7,6 @@ import com.japicraft.camera.CursorProbe;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
-import net.minestom.server.event.player.PlayerChangeHeldSlotEvent;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerTickEvent;
 
