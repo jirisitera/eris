@@ -1,0 +1,40 @@
+{
+    "providers": [
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/black.png",
+            "chars": [
+                "■"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/notification.png",
+            "chars": [
+                "?"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 10,
+            "height": 14,
+            "file": "eris:font/left_click.png",
+            "chars": [
+                "🖱"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 10,
+            "height": 13,
+            "file": "eris:font/left_right_move.png",
+            "chars": [
+                "↔"
+            ]
+        }
+    ]
+}

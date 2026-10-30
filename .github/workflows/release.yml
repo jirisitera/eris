@@ -1,0 +1,46 @@
+name: Eris
+run-name: Eris v${{ inputs.version }}
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Project version: (e.g. 26.1.0)'
+        required: true
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: check version
+        run: |
+          if git rev-parse --verify 'refs/tags/${{ inputs.version }}' >/dev/null 2>&1; then
+            echo 'Version ${{ inputs.version }} already exists!'
+            exit 1
+          fi
+      - name: replace version and hash
+        run: |
+          sed -i 's/INDEV/${{ inputs.version }}/g' build.gradle.kts
+          echo 'Replaced INDEV with '${{ inputs.version }}' successfully!'
+          sed -i 's/PACK_VERSION/${{ inputs.version }}/g' pack.mcmeta
+          echo 'Replaced PACK_VERSION with '${{ inputs.version }}' successfully!'
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          sed -i "s/GIT_HASH/$calculatedSha/g" pack.mcmeta
+          echo "Replaced GIT_HASH with $calculatedSha successfully!"
+      - uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: temurin
+      - uses: gradle/actions/setup-gradle@v6
+      - run: gradle shadowJar
+      - name: package resource pack
+        run: zip -r eris.zip assets LICENSE.txt pack.mcmeta pack.png README.md
+      - uses: Kir-Antipov/mc-publish@v3
+        with:
+          name: Eris v${{ inputs.version }}
+          version: ${{ inputs.version }}
+          files: |
+            build/libs/eris.jar
+            eris.zip
+          github-token: ${{ secrets.GITHUB_TOKEN }}

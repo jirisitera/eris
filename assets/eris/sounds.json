@@ -1,0 +1,67 @@
+{
+    "rain": {
+        "sounds": [
+            {
+                "name": "eris:rain",
+                "stream": true
+            }
+        ]
+    },
+    "thunder": {
+        "sounds": [
+            "eris:strike1",
+            "eris:strike2",
+            "eris:strike3",
+            "eris:strike4",
+            "eris:strike5",
+            "eris:strike6"
+        ]
+    },
+    "drone1": {
+        "sounds": [
+            {
+                "name": "eris:drone1",
+                "stream": true
+            }
+        ]
+    },
+    "drone2": {
+        "sounds": [
+            {
+                "name": "eris:drone2",
+                "stream": true
+            }
+        ]
+    },
+    "hum": {
+        "sounds": [
+            {
+                "name": "eris:hum",
+                "stream": true
+            }
+        ]
+    },
+    "creak": {
+        "sounds": [
+            "eris:creak"
+        ]
+    },
+    "groan": {
+        "sounds": [
+            "eris:groan1",
+            "eris:groan2",
+            "eris:groan3",
+            "eris:groan4",
+            "eris:groan5"
+        ]
+    },
+    "bang": {
+        "sounds": [
+            "eris:bang1",
+            "eris:bang2",
+            "eris:bang3",
+            "eris:bang4",
+            "eris:bang5"
+        ]
+    }
+}

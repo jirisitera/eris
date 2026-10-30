@@ -1,0 +1,37 @@
+{
+    "providers": [
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/transition/loading.png",
+            "chars": [
+                "="
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/transition/background.png",
+            "chars": [
+                "|"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/transition/shutter.png",
+            "chars": [
+                "-"
+            ]
+        },
+        {
+            "type": "space",
+            "advances": {
+                "/": -256
+            }
+        }
+    ]
+}

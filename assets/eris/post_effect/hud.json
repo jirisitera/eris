@@ -1,0 +1,140 @@
+{
+    "targets": {
+        "swap": {},
+        "bloom_h": {},
+        "bloom": {},
+        "ao": {}
+    },
+    "passes": [
+        {
+            "vertex_shader": "minecraft:core/screenquad",
+            "fragment_shader": "eris:post/bloom",
+            "inputs": [
+                {
+                    "sampler_name": "In",
+                    "target": "minecraft:main",
+                    "bilinear": true
+                }
+            ],
+            "uniforms": {
+                "BloomConfig": [
+                    {
+                        "name": "Step",
+                        "type": "vec2",
+                        "value": [
+                            4.0,
+                            0.0
+                        ]
+                    },
+                    {
+                        "name": "Bright",
+                        "type": "float",
+                        "value": 1.0
+                    }
+                ]
+            },
+            "output": "bloom_h"
+        },
+        {
+            "vertex_shader": "minecraft:core/screenquad",
+            "fragment_shader": "eris:post/bloom",
+            "inputs": [
+                {
+                    "sampler_name": "In",
+                    "target": "bloom_h",
+                    "bilinear": true
+                }
+            ],
+            "uniforms": {
+                "BloomConfig": [
+                    {
+                        "name": "Step",
+                        "type": "vec2",
+                        "value": [
+                            0.0,
+                            4.0
+                        ]
+                    },
+                    {
+                        "name": "Bright",
+                        "type": "float",
+                        "value": 0.0
+                    }
+                ]
+            },
+            "output": "bloom"
+        },
+        {
+            "vertex_shader": "minecraft:core/screenquad",
+            "fragment_shader": "eris:post/ao",
+            "inputs": [
+                {
+                    "sampler_name": "Depth",
+                    "target": "minecraft:main",
+                    "use_depth_buffer": true
+                }
+            ],
+            "output": "ao"
+        },
+        {
+            "vertex_shader": "minecraft:core/screenquad",
+            "fragment_shader": "eris:post/cursor",
+            "inputs": [
+                {
+                    "sampler_name": "In",
+                    "target": "minecraft:main"
+                },
+                {
+                    "sampler_name": "Bloom",
+                    "target": "bloom",
+                    "bilinear": true
+                },
+                {
+                    "sampler_name": "Cursor",
+                    "location": "eris:cursor",
+                    "width": 32,
+                    "height": 32,
+                    "bilinear": false
+                },
+                {
+                    "sampler_name": "Font",
+                    "location": "eris:monitor_font",
+                    "width": 512,
+                    "height": 256,
+                    "bilinear": true
+                },
+                {
+                    "sampler_name": "Ao",
+                    "target": "ao",
+                    "bilinear": true
+                }
+            ],
+            "output": "swap"
+        },
+        {
+            "vertex_shader": "minecraft:core/screenquad",
+            "fragment_shader": "minecraft:post/blit",
+            "inputs": [
+                {
+                    "sampler_name": "In",
+                    "target": "swap"
+                }
+            ],
+            "uniforms": {
+                "BlitConfig": [
+                    {
+                        "name": "ColorModulate",
+                        "type": "vec4",
+                        "value": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    }
+                ]
+            },
+            "output": "minecraft:main"
+        }
+    ]
+}

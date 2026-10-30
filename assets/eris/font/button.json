@@ -1,0 +1,57 @@
+{
+    "providers": [
+        {
+            "type": "bitmap",
+            "ascent": 128,
+            "height": 256,
+            "file": "eris:font/black.png",
+            "chars": [
+                "■"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": -12,
+            "height": 12,
+            "file": "eris:font/button_disabled.png",
+            "chars": [
+                "a"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": -12,
+            "height": 12,
+            "file": "eris:font/button.png",
+            "chars": [
+                "b"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": -12,
+            "height": 12,
+            "file": "eris:font/button_highlighted.png",
+            "chars": [
+                "c"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": -13,
+            "height": 8,
+            "file": "eris:font/text_play.png",
+            "chars": [
+                "1"
+            ]
+        },
+        {
+            "type": "space",
+            "advances": {
+                "=": -154,
+                "-": -40,
+                "|": -124
+            }
+        }
+    ]
+}

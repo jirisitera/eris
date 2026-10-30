@@ -1,0 +1,28 @@
+{
+    "pack": {
+        "description": [
+            {
+                "color": "#FF5533",
+                "text": "Eris Base Assets Pack\n"
+            },
+            {
+                "color": "#AAAAAA",
+                "text": "vPACK_VERSION"
+            },
+            {
+                "color": "#FFFFFF",
+                "text": " | "
+            },
+            {
+                "color": "#AAAAAA",
+                "text": "GIT_HASH"
+            }
+        ],
+        "pack_format": 97,
+        "min_format": 97,
+        "max_format": 97
+    },
+    "sodium": {
+        "ignored_shaders": ["fog.glsl"]
+    }
+}

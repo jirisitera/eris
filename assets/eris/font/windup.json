@@ -1,0 +1,22 @@
+{
+    "providers": [
+        {
+            "type": "bitmap",
+            "ascent": 0,
+            "height": 272,
+            "file": "eris:font/windup/progress.png",
+            "chars": [
+                "|"
+            ]
+        },
+        {
+            "type": "bitmap",
+            "ascent": 0,
+            "height": 272,
+            "file": "eris:font/windup/ready.png",
+            "chars": [
+                "-"
+            ]
+        }
+    ]
+}

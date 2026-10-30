@@ -1,0 +1,236 @@
+{
+    "ambient.underwater.loop": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ambient.underwater.loop.additions": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ambient.underwater.loop.additions.rare": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ambient.underwater.loop.additions.ultra_rare": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ambient.underwater.enter": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ambient.underwater.exit": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.player.splash": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.player.splash.high_speed": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.player.swim": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.generic.splash": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.generic.swim": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.water.ambient": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.bubble_column.upwards_ambient": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.bubble_column.whirlpool_ambient": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.player.hurt_drown": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.player.breath": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "item.bucket.fill": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "item.bucket.empty": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "music.under_water": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.bubble_column.bubble_pop": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.bubble_column.upwards_inside": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "block.bubble_column.whirlpool_inside": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "ui.hud.bubble_pop": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "entity.minecart.inside.underwater": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "music.game": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    },
+    "music.creative": {
+        "replace": true,
+        "sounds": [
+            {
+                "name": "silence",
+                "volume": 1.0
+            }
+        ]
+    }
+}
