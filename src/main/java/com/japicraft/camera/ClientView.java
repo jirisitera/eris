@@ -7,8 +7,8 @@ import net.minestom.server.network.packet.client.play.ClientPlayerRotationPacket
 import net.minestom.server.tag.Tag;
 
 public final class ClientView {
-    public static final float MAX_CURSOR_YAW = 54.0F;
-    public static final float MAX_CURSOR_PITCH = 25.0F;
+    public static final float MAX_CURSOR_YAW = 90.0F; // mouse degrees from the screen center to the screen edge
+    public static final float MAX_CURSOR_PITCH = 90.0F;
     private static final Tag<View> TAG = Tag.Transient("clientView");
     private static final Tag<Float> MOUSE_YAW = Tag.Transient("clientMouseYaw");
     private static final Tag<Float> MOUSE_PITCH = Tag.Transient("clientMousePitch");

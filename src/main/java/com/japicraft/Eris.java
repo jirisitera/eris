@@ -7,7 +7,6 @@ import com.japicraft.events.PlayerInputManager;
 import com.japicraft.events.PlayerSetupManager;
 import com.japicraft.events.PlayerUpdateManager;
 import com.japicraft.server.ServerListManager;
-import com.japicraft.skin.SkinResourcePackServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.minestom.server.Auth;
@@ -70,8 +69,6 @@ public final class Eris {
     }
 
     private void registerManagers() {
-
-        new SkinResourcePackServer().register();
 
         PlayerSetupManager.register();
         PlayerUpdateManager.register();

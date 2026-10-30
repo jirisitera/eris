@@ -1,6 +1,0 @@
-{
-    "parent": "eris:item/computer_on",
-    "textures": {
-        "probe": "eris:item/map_probe_1"
-    }
-}

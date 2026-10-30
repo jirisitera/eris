@@ -32,10 +32,10 @@ void main() {
             discard;
         }
 
-        // Store signed yaw (-180..180 degrees) wrapped modulo 360 as an unsigned value.
-        float wrappedYaw = mod(mod(lookAngles.x + 180.0, 360.0) + 360.0, 360.0);
+        // Store signed yaw (-720..720 degrees) wrapped modulo 1440 as an unsigned value.
+        float wrappedYaw = mod(mod(lookAngles.x + 720.0, 1440.0) + 1440.0, 1440.0);
         int encodedYaw = clamp(
-            int(round(wrappedYaw / 360.0 * 65535.0)),
+            int(round(wrappedYaw / 1440.0 * 65535.0)),
             0,
             65535
         );
@@ -49,10 +49,10 @@ void main() {
         );
 
         ivec3 marker = pixel.x == 26
-        ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8)
-        : pixel.x == 27
-        ? ivec3(encodedPitch & 255, 0, 0)
-        : MARKER_COLOR;
+            ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8)
+            : pixel.x == 27
+                ? ivec3(encodedPitch & 255, 0, 0)
+                : MARKER_COLOR;
 
         fragColor = vec4(vec3(marker) / 255.0, 1.0);
         return;

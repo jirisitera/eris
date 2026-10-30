@@ -9,7 +9,7 @@
 #include <eris:pbr.glsl>
 // @formatter:on
 
-const int PBR_MARK_MONITOR_DATA = -500;
+const int PBR_MARK_CURSOR_DATA = -500;
 const int PBR_MARK_DUST_PARTICLES = -300;
 
 uniform sampler2D Sampler0;
@@ -61,28 +61,12 @@ vec4 applyVanillaFogAndLight(vec4 baseColor) {
 #endif
 
 void main() {
-    // Write monitor data pixels directly to frame buffer
-    if (pbrMark == PBR_MARK_MONITOR_DATA) {
+    // Write cursor probe data pixels directly to frame buffer
+    if (pbrMark == PBR_MARK_CURSOR_DATA) {
         #ifdef OIT_ALPHA_ONLY
         discard;
         #else
         fragColor = vec4(meshLocal, 1.0);
-        return;
-        #endif
-    }
-
-    // Monitor screen rendering (red channel encodes monitor ID: 250, 251, 252).
-    // The screen UV is stored at 16-bit precision in G/B, U on even and V on odd checkerboard pixels
-    // (decoded by eris:monitor_data.glsl in the post chain).
-    if (pbrMark <= -600 && pbrMark >= -602) {
-        #ifdef OIT_ALPHA_ONLY
-        discard;
-        #else
-        int monitorIndex = -600 - pbrMark;
-        vec2 screenUv = clamp(faceUv, 0.0, 1.0);
-        bool storesU = ((int(gl_FragCoord.x) + int(gl_FragCoord.y)) & 1) == 0;
-        int encoded = int(round((storesU ? screenUv.x : screenUv.y) * 65535.0));
-        fragColor = vec4(float(250 + monitorIndex), float(encoded >> 8), float(encoded & 255), 255.0) / 255.0;
         return;
         #endif
     }
@@ -109,7 +93,7 @@ void main() {
 
         float shimmer = 0.55 + 0.45 * sin(GameTime * 3600.0 * (0.6 + meshLocal.z) + meshLocal.z * 90.0);
         float particleBrightness = meshLocal.y > 0.5 ? 0.45 : 1.3 * (1.1 - radius * radius * 0.5);
-        fragColor = vec4(min(vec3(1.0, 0.92, 0.78) * spotlightAttenuation * shimmer * particleBrightness, 249.0 / 255.0), 1.0);
+        fragColor = vec4(min(vec3(1.0, 0.92, 0.78) * spotlightAttenuation * shimmer * particleBrightness, 1.0), 1.0);
         return;
         #endif
     }
@@ -123,7 +107,7 @@ void main() {
         executeAlphaOnlyPhase(gl_FragCoord.z, 1.0);
         #else
         vec3 pbrColor = shadePackedPBR(Sampler0, texCoord0, exp2(float(pbrMark)), pbrPos, normalize(pbrNormal));
-        fragColor = vec4(min(pbrColor, vec3(249.0 / 255.0, 1.0, 1.0)), 1.0);
+        fragColor = vec4(pbrColor, 1.0);
         #endif
         return;
     }
@@ -139,11 +123,9 @@ void main() {
     #ifdef GLINT
     baseColor.a = max(baseColor.a, GlintAlpha);
     #endif
-
     #ifdef OIT_ALPHA_ONLY
     executeAlphaOnlyPhase(gl_FragCoord.z, baseColor.a);
     #else
     fragColor = applyVanillaFogAndLight(baseColor);
-    fragColor.r = min(fragColor.r, 249.0 / 255.0);
     #endif
 }

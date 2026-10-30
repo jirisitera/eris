@@ -44,9 +44,8 @@ layout(location = 11) out vec3 meshLocal;
 layout(location = 12) out vec2 faceUv;
 
 const int PBR_MARK_DUST_PARTICLES = -300;
-const int PBR_MARK_MONITOR_DATA = -500;
-const int MONITOR_ROW_BASE_Y = 19;
-const vec3 ACTIVE_MARKER = vec3(91.0, 126.0, 209.0) / 255.0;
+const int PBR_MARK_CURSOR_DATA = -500;
+const int CURSOR_PROBE_ROW_Y = 19;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
@@ -72,19 +71,12 @@ void main() {
     vec2 texelPos = UV0 * vec2(textureSize(Sampler0, 0));
     ivec4 texelTag = ivec4(round(texelFetch(Sampler0, ivec2(texelPos), 0) * 255.0));
 
-    // Monitor screen and data pixel encoding
-    if (texelTag.r == 252 && texelTag.g >= 99 && texelTag.g <= 101 && texelTag.a == 255) {
-        int monitorIndex = texelTag.g - 99;
-        if (texelTag.b == 255) {
-            faceUv = (fract(texelPos) - 0.125) / 0.75;
-            pbrMark = -600 - monitorIndex;
-        } else if (texelTag.b < 44) {
-            vec2 quadCorner = QUAD_UVS[3 - gl_VertexIndex % 4];
-            int rowY = MONITOR_ROW_BASE_Y - monitorIndex;
-            gl_Position = vec4((vec2(float(texelTag.b), float(rowY)) + quadCorner) / ScreenSize * 2.0 - 1.0, 0.999, 1.0);
-            meshLocal = (texelTag.b == 40 || texelTag.b == 41) ? ACTIVE_MARKER : Color.rgb;
-            pbrMark = PBR_MARK_MONITOR_DATA;
-        }
+    // Cursor probe data pixel encoding
+    if (texelTag.r == 252 && texelTag.g == 99 && texelTag.b < 8 && texelTag.a == 255) {
+        vec2 quadCorner = QUAD_UVS[3 - gl_VertexIndex % 4];
+        gl_Position = vec4((vec2(float(texelTag.b), float(CURSOR_PROBE_ROW_Y)) + quadCorner) / ScreenSize * 2.0 - 1.0, 0.999, 1.0);
+        meshLocal = Color.rgb;
+        pbrMark = PBR_MARK_CURSOR_DATA;
     }
 
     // Floating dust particles within the spotlight beam

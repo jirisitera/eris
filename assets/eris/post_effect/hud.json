@@ -97,13 +97,6 @@
                     "bilinear": false
                 },
                 {
-                    "sampler_name": "Font",
-                    "location": "eris:monitor_font",
-                    "width": 512,
-                    "height": 256,
-                    "bilinear": true
-                },
-                {
                     "sampler_name": "Ao",
                     "target": "ao",
                     "bilinear": true

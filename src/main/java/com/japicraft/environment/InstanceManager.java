@@ -20,9 +20,6 @@ public class InstanceManager {
         instance.setChunkSupplier(LightingChunk::new);
         // generate main structure
         StructureLoader.load(Eris.class.getClassLoader(), "office.nbt", instance);
-        StructureLoader loader = new StructureLoader();
-        loader.spawnAll(instance);
-        loader.assignEntityData(player);
         return instance;
     }
     public static void remove(Player player) {

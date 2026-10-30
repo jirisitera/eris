@@ -222,23 +222,4 @@ vec3 shadeFlatPBR(sampler2D atlasSampler, vec2 uv, vec3 viewPos, vec3 geomNormal
     return shadePBR(albedo, normal, 0.9, 0.0, 1.0, viewPos);
 }
 
-// Backwards compatibility aliases
-#define _t ERIS_PBR_GLSL
-#define ib PI
-#define jb getCameraWorldOffset
-#define lb srgbToLinear
-#define mb linearToSrgb
-#define nb calculateTBN
-#define yb distributionGGX
-#define Bb geometrySmith
-#define Fb fresnelSchlick
-#define Hb sampleAmbientSky
-#define Jb calculatePointLight
-#define bc calculateSpotlight
-#define fc calculateLightFlicker
-#define jc shadePBR
-#define wc shadePackedPBR
-#define Bc shadeBeveledSurface
-#define Ec shadeFlatPBR
-
 #endif

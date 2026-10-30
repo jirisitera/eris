@@ -1,10 +1,6 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
-// @formatter:off
-#include <eris:monitor_data.glsl>
-// @formatter:on
-
 uniform sampler2D InSampler;
 
 layout(std140) uniform BloomConfig {
@@ -14,38 +10,6 @@ layout(std140) uniform BloomConfig {
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
-
-const ivec3 ACTIVE_MARKER = ivec3(91, 126, 209);
-
-bool monitorActive(int rowY) {
-    return ivec3(round(texelFetch(InSampler, ivec2(40, rowY), 0).rgb * 255.0)) == ACTIVE_MARKER &&
-    ivec3(round(texelFetch(InSampler, ivec2(41, rowY), 0).rgb * 255.0)) == ACTIVE_MARKER;
-}
-
-// Lobby screen marker (see MapProbe.lobbyDots / cursor.fsh)
-bool lobbyActive(int rowY) {
-    return ivec3(round(texelFetch(InSampler, ivec2(8, rowY), 0).rgb * 255.0)) == ivec3(0) &&
-    ivec3(round(texelFetch(InSampler, ivec2(9, rowY), 0).rgb * 255.0)) == ACTIVE_MARKER;
-}
-
-// Glow emitted by a monitor screen pixel (cheap approximation of what cursor.fsh renders)
-vec3 monitorGlow(int monitorIndex, vec2 monitorUv) {
-    int rowY = 19 - monitorIndex;
-    if (!monitorActive(rowY)) {
-        return vec3(0.0);
-    }
-    vec2 curved;
-    vec2 centered;
-    if (!curveMonitorUv(monitorUv, curved, centered)) {
-        return vec3(0.0);
-    }
-    // TV static of the lobby screen gives off a soft grey glow
-    if (lobbyActive(rowY)) {
-        return vec3(0.22);
-    }
-    // In-game screens (clock, energy, camera buttons) don't glow
-    return vec3(0.0);
-}
 
 // Sample bloom input: extracts bright highlights in the first pass (Bright >= 0.5),
 // or samples the intermediate blurred texture in the second pass (Bright < 0.5).
@@ -67,19 +31,12 @@ vec3 sampleBloomHighlight(vec2 uv) {
     float minChannel = min(color.r, min(color.g, color.b));
     bool isWhiteSurface = (maxChannel - minChannel) < 0.2 * maxChannel;
 
-    // Monitor screens (red channel 250..252)
-    if (rgb255.r >= 250 && rgb255.r <= 252 && !isWhiteSurface) {
-        vec2 monitorUv;
-        int monitorIndex = decodeMonitor(InSampler, pixelCoord, monitorUv);
-        return monitorIndex >= 0 ? monitorGlow(monitorIndex, monitorUv) : vec3(0.0);
-    }
-
     // Check emissive parity marker: R odd, G even, B odd
     bool isEmissive =
-    (rgb255.r & 1) == 1 &&
-    (rgb255.g & 1) == 0 &&
-    (rgb255.b & 1) == 1 &&
-    maxChannel > 0.2;
+        (rgb255.r & 1) == 1 &&
+        (rgb255.g & 1) == 0 &&
+        (rgb255.b & 1) == 1 &&
+        maxChannel > 0.2;
 
     if (isEmissive) {
         return color;
