@@ -1,10 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.bone.BoneMovement;
 import kr.toxicity.model.api.bone.BonePosition;
@@ -29,6 +25,11 @@ import net.minestom.server.network.packet.server.play.SpawnEntityPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class ModelNametagImpl implements ModelNametag {
     private static final Vector3f NO_OFFSET = new Vector3f();

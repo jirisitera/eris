@@ -1,15 +1,11 @@
 package com.japicraft.bettermodel.impl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.IntPredicate;
 import net.minestom.server.entity.Metadata;
 import net.minestom.server.entity.MetadataDef;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.IntPredicate;
 
 final class EntityData {
     private final Map<Integer, Metadata.Entry<?>> values = new LinkedHashMap<>();

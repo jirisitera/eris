@@ -1,13 +1,15 @@
 package com.japicraft;
 
+import com.japicraft.bettermodel.BetterModelMinestom;
 import com.japicraft.command.InstanceCommand;
 import com.japicraft.command.StopCommand;
+import com.japicraft.command.VoiceChatCommand;
 import com.japicraft.environment.InstanceManager;
 import com.japicraft.events.PlayerInputManager;
 import com.japicraft.events.PlayerSetupManager;
 import com.japicraft.events.PlayerUpdateManager;
 import com.japicraft.server.ServerListManager;
-import com.japicraft.bettermodel.BetterModelMinestom;
+import com.japicraft.voicechat.VoiceChatManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.minestom.server.Auth;
@@ -59,6 +61,7 @@ public final class Eris {
 
         commandManager.register(new InstanceCommand());
         commandManager.register(new StopCommand());
+        commandManager.register(new VoiceChatCommand());
 
         Eris.CONSOLE = commandManager.getConsoleSender();
         Eris.LOGGER.atInfo().log(Component.text("Loaded console commands."));
@@ -75,5 +78,8 @@ public final class Eris {
 
         BetterModelMinestom.register();
         LOGGER.atInfo().log(Component.text("Loaded BetterModel."));
+
+        VoiceChatManager.register();
+        LOGGER.atInfo().log(Component.text("Loaded Simple Voice Chat."));
     }
 }

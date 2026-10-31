@@ -10,6 +10,7 @@ repositories {
     maven("https://central.sonatype.com/repository/maven-snapshots/")
     mavenCentral()
     maven("https://maven.blamejared.com/")
+    maven("https://maven.maxhenkel.de/repository/public")
 }
 
 dependencies {
@@ -19,6 +20,9 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.19")
     // nbt structure import
     implementation("dev.hollowcube:schem:2.0.1")
+
+    // simple voice chat api
+    implementation("de.maxhenkel.voicechat:voicechat-api:2.6.27")
 
     // bettermodel & dependencies
     implementation("io.github.toxicity188:bettermodel-core:3.6.0")

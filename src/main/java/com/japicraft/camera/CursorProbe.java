@@ -7,13 +7,12 @@ import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.tag.Tag;
 
 import java.util.List;
 
 public final class CursorProbe {
-    public static final int SECTOR_COLUMNS = 5;
-    public static final int SECTOR_ROWS = 4;
     private static final String ITEM_MODEL = Eris.NAMESPACE + Eris.NAMESPACE_SEPARATOR + "ui_probe";
     private static final Color BUFFER_COLOR = new Color(91, 126, 209);
     private static final Tag<ProbeState> TAG = Tag.Transient("cursorProbe");
@@ -37,31 +36,43 @@ public final class CursorProbe {
         return Math.round(Math.clamp(angle + halfRange, 0.0F, range) / range * 65535.0F);
     }
 
-    private static float wrapAngle(float angle, float range) {
-        float halfRange = range * 0.5F;
-        float wrapped = ((angle + halfRange) % range + range) % range - halfRange;
-        return wrapped;
+    private static float wrapAngle(float angle) {
+        float halfRange = (float) 1440.0 * 0.5F;
+        return ((angle + halfRange) % (float) 1440.0 + (float) 1440.0) % (float) 1440.0 - halfRange;
     }
 
     public static void update(Player player) {
+        update(player, false);
+    }
+
+    public static void forceUpdate(Player player) {
+        update(player, true);
+    }
+
+    public static void update(Player player, boolean force) {
         int mouseYaw = encodeAngle(ClientView.mouseYaw(player), 360.0F);
         int mousePitch = encodeAngle(ClientView.mousePitch(player), 360.0F);
-        int rawYaw = encodeAngle(wrapAngle(ClientView.yaw(player), 1440.0F), 1440.0F);
+        int rawYaw = encodeAngle(wrapAngle(ClientView.yaw(player)), 1440.0F);
         int rawPitch = encodeAngle(ClientView.pitch(player), 180.0F);
         boolean emoteWheelOpen = EmoteWheel.isOpen(player);
         long key = ((long) mouseYaw << 48) | ((long) mousePitch << 32) | ((long) rawYaw << 16) | rawPitch;
 
         ProbeState previous = player.getTag(CursorProbe.TAG);
-        if (previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
+        if (!force && previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
             return;
         }
-        ItemStack item = (previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen)
+        ItemStack item = (!force && previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen)
             ? previous.item
             : createProbe(mouseYaw, mousePitch, rawYaw, rawPitch, emoteWheelOpen);
         player.setTag(CursorProbe.TAG, new ProbeState(key, emoteWheelOpen, item));
 
-        if (player.getEquipment(EquipmentSlot.OFF_HAND) != item) {
+        if (force || player.getEquipment(EquipmentSlot.OFF_HAND) != item) {
             player.setEquipment(EquipmentSlot.OFF_HAND, item);
+        }
+
+        if (force) {
+            player.getInventory().update();
+            player.sendPacket(new SetSlotPacket(0, 0, (short) 45, item));
         }
     }
 
@@ -69,13 +80,6 @@ public final class CursorProbe {
         float x = Math.clamp((ClientView.mouseYaw(player) + ClientView.MAX_CURSOR_YAW) / (ClientView.MAX_CURSOR_YAW * 2.0F), 0.0F, 1.0F);
         float y = Math.clamp((ClientView.mousePitch(player) + ClientView.MAX_CURSOR_PITCH) / (ClientView.MAX_CURSOR_PITCH * 2.0F), 0.0F, 1.0F);
         return new ScreenPosition(x, y);
-    }
-
-    public static int sector(Player player) {
-        ScreenPosition position = screenPosition(player);
-        int column = Math.min((int) (position.x() * SECTOR_COLUMNS), SECTOR_COLUMNS - 1);
-        int row = Math.min((int) (position.y() * SECTOR_ROWS), SECTOR_ROWS - 1);
-        return row * SECTOR_COLUMNS + column;
     }
 
     public static void detach(Player player) {

@@ -1,23 +1,13 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomPlayer;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.nms.Identifiable;
 import kr.toxicity.model.api.nms.PlayerChannelHandler;
 import kr.toxicity.model.api.tracker.EntityTrackerRegistry;
 import kr.toxicity.model.api.tracker.TrackerUpdateAction;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EquipmentSlot;
-import net.minestom.server.entity.LivingEntity;
-import net.minestom.server.entity.Metadata;
-import net.minestom.server.entity.Player;
+import net.minestom.server.entity.*;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerPacketOutEvent;
 import net.minestom.server.instance.Instance;
@@ -25,17 +15,11 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.client.play.ClientHeldItemChangePacket;
 import net.minestom.server.network.packet.client.play.ClientPlayerActionPacket;
 import net.minestom.server.network.packet.server.ServerPacket;
-import net.minestom.server.network.packet.server.play.DestroyEntitiesPacket;
-import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
-import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
-import net.minestom.server.network.packet.server.play.HeldItemChangePacket;
-import net.minestom.server.network.packet.server.play.RespawnPacket;
-import net.minestom.server.network.packet.server.play.SetPassengersPacket;
-import net.minestom.server.network.packet.server.play.SetSlotPacket;
-import net.minestom.server.network.packet.server.play.SpawnEntityPacket;
-import net.minestom.server.network.packet.server.play.WindowItemsPacket;
+import net.minestom.server.network.packet.server.play.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
 
 final class PlayerChannelHandlerImpl implements PlayerChannelHandler {
     private static final Set<Integer> EQUIPMENT_SLOTS = Set.of(5, 6, 7, 8);
@@ -155,7 +139,7 @@ final class PlayerChannelHandlerImpl implements PlayerChannelHandler {
         if (registry == null) {
             return;
         }
-        MinestomScheduler.INSTANCE.taskLater(1L, () -> registry.spawn(new MinestomPlayer(this.player)));
+        MinestomScheduler.INSTANCE.taskLater(1L, () -> registry.spawnIfNotSpawned(new MinestomPlayer(this.player)));
     }
 
     private @Nullable ServerPacket passengers(@NotNull SetPassengersPacket packet) {

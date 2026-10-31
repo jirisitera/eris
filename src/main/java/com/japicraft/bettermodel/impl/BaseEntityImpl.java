@@ -1,11 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 import kr.toxicity.model.api.entity.BaseEntity;
 import kr.toxicity.model.api.platform.PlatformEntity;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -27,10 +22,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
 class BaseEntityImpl implements BaseEntity {
     static final Tag<String> MODEL_DATA = Tag.String("bettermodel:model_data");
     private static final Map<UUID, Long> LAST_HURT = new ConcurrentHashMap<>();
     protected final @NotNull Entity entity;
+
+    BaseEntityImpl(@NotNull Entity entity) {
+        this.entity = entity;
+    }
 
     static void markHurt(@NotNull UUID uuid) {
         long now = System.currentTimeMillis();
@@ -40,10 +45,6 @@ class BaseEntityImpl implements BaseEntity {
 
     static void forget(@NotNull UUID uuid) {
         LAST_HURT.remove(uuid);
-    }
-
-    BaseEntityImpl(@NotNull Entity entity) {
-        this.entity = entity;
     }
 
     @Override

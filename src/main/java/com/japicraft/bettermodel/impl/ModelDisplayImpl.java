@@ -1,9 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.entity.BaseEntity;
 import kr.toxicity.model.api.nms.DisplayTransformer;
@@ -21,12 +18,12 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Metadata;
 import net.minestom.server.entity.MetadataDef;
 import net.minestom.server.item.ItemStack;
-import net.minestom.server.network.packet.server.play.DestroyEntitiesPacket;
-import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
-import net.minestom.server.network.packet.server.play.EntityRotationPacket;
-import net.minestom.server.network.packet.server.play.EntityTeleportPacket;
-import net.minestom.server.network.packet.server.play.SpawnEntityPacket;
+import net.minestom.server.network.packet.server.play.*;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 final class ModelDisplayImpl implements ModelDisplay {
     private static final Set<Integer> SENT = Set.of(

@@ -9,6 +9,7 @@
 #include <eris:pbr.glsl>
 // @formatter:on
 
+const int PBR_MARK_TIMER = -600;
 const int PBR_MARK_CURSOR_DATA = -500;
 const int PBR_MARK_DUST_PARTICLES = -300;
 
@@ -71,6 +72,26 @@ void main() {
         #endif
     }
 
+    // Case timer screen rendering (red channel 250 marks timer pixels).
+    // Even checkerboard pixels pack (u10 << 6) | seconds in G/B; odd pixels pack (v8 << 8) | (strikes << 6) | minutes
+    // (decoded by eris:timer.glsl in the post chain using eris:textures/effect/font.png).
+    if (pbrMark == PBR_MARK_TIMER) {
+        #ifdef OIT_ALPHA_ONLY
+        discard;
+        #else
+        vec2 screenUv = clamp(faceUv, 0.0, 1.0);
+        int minutes = clamp(int(round(meshLocal.x)), 0, 63);
+        int seconds = clamp(int(round(meshLocal.y)), 0, 59);
+        int strikes = clamp(int(round(meshLocal.z)), 0, 3);
+        bool storesEven = ((int(gl_FragCoord.x) + int(gl_FragCoord.y)) & 1) == 0;
+        int encoded = storesEven
+            ? ((int(round(screenUv.x * 1023.0)) << 6) | (seconds & 63))
+            : ((int(round(screenUv.y * 255.0)) << 8) | ((strikes & 3) << 6) | (minutes & 63));
+        fragColor = vec4(250.0, float(encoded >> 8), float(encoded & 255), 255.0) / 255.0;
+        return;
+        #endif
+    }
+
     // Floating dust particles within the main spotlight beam
     if (pbrMark == PBR_MARK_DUST_PARTICLES) {
         #ifdef OIT_ALPHA_ONLY
@@ -93,7 +114,7 @@ void main() {
 
         float shimmer = 0.55 + 0.45 * sin(GameTime * 3600.0 * (0.6 + meshLocal.z) + meshLocal.z * 90.0);
         float particleBrightness = meshLocal.y > 0.5 ? 0.45 : 1.3 * (1.1 - radius * radius * 0.5);
-        fragColor = vec4(min(vec3(1.0, 0.92, 0.78) * spotlightAttenuation * shimmer * particleBrightness, 1.0), 1.0);
+        fragColor = vec4(min(vec3(1.0, 0.92, 0.78) * spotlightAttenuation * shimmer * particleBrightness, 249.0 / 255.0), 1.0);
         return;
         #endif
     }
@@ -107,7 +128,7 @@ void main() {
         executeAlphaOnlyPhase(gl_FragCoord.z, 1.0);
         #else
         vec3 pbrColor = shadePackedPBR(Sampler0, texCoord0, exp2(float(pbrMark)), pbrPos, normalize(pbrNormal));
-        fragColor = vec4(pbrColor, 1.0);
+        fragColor = vec4(min(pbrColor, vec3(249.0 / 255.0, 1.0, 1.0)), 1.0);
         #endif
         return;
     }
@@ -127,5 +148,6 @@ void main() {
     executeAlphaOnlyPhase(gl_FragCoord.z, baseColor.a);
     #else
     fragColor = applyVanillaFogAndLight(baseColor);
+    fragColor.r = min(fragColor.r, 249.0 / 255.0);
     #endif
 }

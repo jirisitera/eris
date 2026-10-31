@@ -3,6 +3,7 @@ package com.japicraft.emote;
 import com.japicraft.bettermodel.MinestomAdapter;
 import com.japicraft.bettermodel.impl.MinestomScheduler;
 import com.japicraft.camera.CameraAnchor;
+import com.japicraft.environment.AnimationManager;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.AnimationIterator;
 import kr.toxicity.model.api.animation.AnimationModifier;
@@ -11,10 +12,7 @@ import kr.toxicity.model.api.data.blueprint.BlueprintAnimation;
 import kr.toxicity.model.api.data.renderer.ModelRenderer;
 import kr.toxicity.model.api.tracker.EntityHideOption;
 import kr.toxicity.model.api.tracker.EntityTracker;
-import kr.toxicity.model.api.tracker.EntityTrackerRegistry;
 import kr.toxicity.model.api.tracker.TrackerModifier;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +35,7 @@ public class EmoteManager {
 
     public static void stop(Player player) {
         player.removeTag(BODY_YAW_TAG);
-        EntityTrackerRegistry registry = BetterModel.registryOrNull(player.getUuid());
-        if (registry != null) {
-            registry.close();
-        }
+        AnimationManager.stop(player);
     }
 
     public static void play(Player player, String targetLimb, String animName) {
@@ -99,8 +94,8 @@ public class EmoteManager {
         if (idleOpt.isPresent()) {
             BlueprintAnimation idleAnim = idleOpt.get();
             boolean idleAlreadyQueued = tracker.bones().stream()
-                    .map(RenderedBone::runningAnimation)
-                    .anyMatch(a -> a != null && "idle".equalsIgnoreCase(a.name()));
+                .map(RenderedBone::runningAnimation)
+                .anyMatch(a -> a != null && "idle".equalsIgnoreCase(a.name()));
             if (!idleAlreadyQueued) {
                 tracker.animate(idleAnim, new AnimationModifier(0, 0, AnimationIterator.Type.LOOP));
             }
@@ -139,7 +134,8 @@ public class EmoteManager {
                 });
             };
         } else {
-            onEnd = () -> {};
+            onEnd = () -> {
+            };
         }
 
         AnimationModifier modifier = new AnimationModifier(0, 0, selectedAnim.loop());

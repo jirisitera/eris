@@ -1,7 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.function.Consumer;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.pack.PackZipper;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -16,12 +15,7 @@ import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
-import net.minestom.server.event.entity.EntityDamageEvent;
-import net.minestom.server.event.entity.EntityDeathEvent;
-import net.minestom.server.event.entity.EntityDespawnEvent;
-import net.minestom.server.event.entity.EntityPotionAddEvent;
-import net.minestom.server.event.entity.EntityPotionRemoveEvent;
-import net.minestom.server.event.entity.EntitySpawnEvent;
+import net.minestom.server.event.entity.*;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerMoveEvent;
@@ -29,10 +23,33 @@ import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 final class EntityManager implements GlobalManager {
     private final EventNode<Event> events = EventNode.all("bettermodel-entities");
 
     EntityManager() {
+    }
+
+    private static boolean isVisibilityEffect(@NotNull PotionEffect effect) {
+        return effect == PotionEffect.GLOWING || effect == PotionEffect.INVISIBILITY;
+    }
+
+    private static void died(@NotNull Entity entity) {
+        eachTracker(entity, tracker -> tracker.animate(TrackerExtraAnimation.DEATH));
+        if (entity instanceof Player) {
+            EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
+            if (registry != null) {
+                registry.despawn();
+            }
+        }
+    }
+
+    private static void eachTracker(@NotNull Entity entity, @NotNull Consumer<EntityTracker> action) {
+        EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
+        if (registry != null) {
+            registry.trackers().forEach(action);
+        }
     }
 
     @NotNull EventNode<Event> events() {
@@ -76,7 +93,7 @@ final class EntityManager implements GlobalManager {
 
         // Lifecycle events
         this.events.addListener(EntitySpawnEvent.class, event -> {
-            EntityTrackerRegistry registry = BetterModel.registryOrNull(event.getEntity().getUuid());
+            EntityTrackerRegistry registry = BetterModel.registryOrNull(MinestomAdapter.adapt(event.getEntity()));
             if (registry != null) {
                 registry.refresh();
             }
@@ -122,26 +139,5 @@ final class EntityManager implements GlobalManager {
         });
         this.events.addListener(EntityDeathEvent.class, event -> died(event.getEntity()));
         this.events.addListener(PlayerDeathEvent.class, event -> died(event.getPlayer()));
-    }
-
-    private static boolean isVisibilityEffect(@NotNull PotionEffect effect) {
-        return effect == PotionEffect.GLOWING || effect == PotionEffect.INVISIBILITY;
-    }
-
-    private static void died(@NotNull Entity entity) {
-        eachTracker(entity, tracker -> tracker.animate(TrackerExtraAnimation.DEATH));
-        if (entity instanceof Player) {
-            EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
-            if (registry != null) {
-                registry.despawn();
-            }
-        }
-    }
-
-    private static void eachTracker(@NotNull Entity entity, @NotNull Consumer<EntityTracker> action) {
-        EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
-        if (registry != null) {
-            registry.trackers().forEach(action);
-        }
     }
 }

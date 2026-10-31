@@ -1,20 +1,9 @@
 package com.japicraft.bettermodel.impl;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
 import kr.toxicity.model.api.nms.Identifiable;
 import kr.toxicity.model.api.tracker.EntityHideOption;
 import kr.toxicity.model.api.tracker.EntityTrackerRegistry;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EquipmentSlot;
-import net.minestom.server.entity.LivingEntity;
-import net.minestom.server.entity.Metadata;
-import net.minestom.server.entity.MetadataDef;
+import net.minestom.server.entity.*;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
 import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
@@ -22,6 +11,9 @@ import net.minestom.server.network.packet.server.play.SetPassengersPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+
+import java.util.*;
+import java.util.function.Function;
 
 final class Packets {
     static final int FLAGS_INDEX = MetadataDef.ENTITY_FLAGS.index();

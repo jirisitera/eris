@@ -14,7 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
+import java.util.HexFormat;
 import java.util.UUID;
 
 public class GlobalResourcePack {
@@ -23,7 +23,7 @@ public class GlobalResourcePack {
             // download file
             HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
             // calculate SHA1 hash
-            return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-1").digest(response.body()));
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(response.body()));
         } catch (InterruptedException | IOException | NoSuchAlgorithmException e) {
             return null;
         }

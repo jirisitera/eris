@@ -1,10 +1,11 @@
 package com.japicraft.bettermodel;
 
-import java.util.UUID;
 import kr.toxicity.model.api.platform.PlatformLocation;
 import kr.toxicity.model.api.platform.PlatformPlayer;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.UUID;
 
 public record MinestomPlayer(@NotNull Player source) implements PlatformPlayer {
     @Override

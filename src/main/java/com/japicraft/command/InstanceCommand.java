@@ -4,11 +4,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
-import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 
-import java.util.*;
+import java.util.Collection;
 
 public class InstanceCommand extends Command {
     public InstanceCommand() {

@@ -1,38 +1,15 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import kr.toxicity.model.BetterModelEvaluatorImpl;
 import kr.toxicity.model.BetterModelEventBusImpl;
 import kr.toxicity.model.BetterModelPlatformImpl;
-import kr.toxicity.model.api.BetterModel;
-import kr.toxicity.model.api.BetterModelConfig;
-import kr.toxicity.model.api.BetterModelEvaluator;
-import kr.toxicity.model.api.BetterModelEventBus;
-import kr.toxicity.model.api.BetterModelLogger;
-import kr.toxicity.model.api.BetterModelPlatform;
+import kr.toxicity.model.api.*;
 import kr.toxicity.model.api.data.ModelAsset;
-import kr.toxicity.model.api.data.renderer.ModelRenderer;
 import kr.toxicity.model.api.event.ModelAssetsEvent;
 import kr.toxicity.model.api.event.PluginEndReloadEvent;
 import kr.toxicity.model.api.event.PluginStartReloadEvent;
-import kr.toxicity.model.api.manager.Manager;
-import kr.toxicity.model.api.manager.ModelManager;
-import kr.toxicity.model.api.manager.PlayerManager;
-import kr.toxicity.model.api.manager.ProfileManager;
-import kr.toxicity.model.api.manager.ReloadInfo;
-import kr.toxicity.model.api.manager.ScriptManager;
-import kr.toxicity.model.api.manager.SkinManager;
+import kr.toxicity.model.api.manager.*;
 import kr.toxicity.model.api.nms.NMS;
 import kr.toxicity.model.api.pack.PackResult;
 import kr.toxicity.model.api.pack.PackZipper;
@@ -40,12 +17,7 @@ import kr.toxicity.model.api.platform.PlatformAdapter;
 import kr.toxicity.model.api.scheduler.ModelScheduler;
 import kr.toxicity.model.api.util.EventUtil;
 import kr.toxicity.model.api.version.MinecraftVersion;
-import kr.toxicity.model.manager.GlobalManager;
-import kr.toxicity.model.manager.ModelManagerImpl;
-import kr.toxicity.model.manager.ProfileManagerImpl;
-import kr.toxicity.model.manager.ReloadPipeline;
-import kr.toxicity.model.manager.ScriptManagerImpl;
-import kr.toxicity.model.manager.SkinManagerImpl;
+import kr.toxicity.model.manager.*;
 import kr.toxicity.model.util.IndicatorsKt;
 import kr.toxicity.model.util.PacksKt;
 import net.kyori.adventure.text.Component;
@@ -56,6 +28,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 import org.semver4j.Semver;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 public final class MinestomBetterModel implements BetterModelPlatformImpl {
     private static final String RESOURCES = "bettermodel/";
@@ -80,6 +68,119 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
         this.dataFolder = dataFolder.getAbsoluteFile();
     }
 
+    private static void loadBundledModels(@NotNull ModelAssetsEvent event) {
+        String folder = switch (event.type()) {
+            case GENERAL -> "models";
+            case PLAYER -> "players";
+        };
+        String resourcePrefix = RESOURCES + folder;
+
+        Path devDir = Path.of("src/main/resources", resourcePrefix);
+        if (Files.isDirectory(devDir)) {
+            loadModelsFromDirectory(devDir, event);
+        }
+
+        try {
+            Enumeration<URL> resources = MinestomBetterModel.class.getClassLoader().getResources(resourcePrefix);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                String protocol = url.getProtocol();
+                if ("file".equalsIgnoreCase(protocol)) {
+                    try {
+                        Path dir = Path.of(url.toURI());
+                        if (Files.isDirectory(dir)) {
+                            loadModelsFromDirectory(dir, event);
+                        }
+                    } catch (URISyntaxException ignored) {
+                    }
+                } else if ("jar".equalsIgnoreCase(protocol) && url.openConnection() instanceof JarURLConnection connection) {
+                    loadModelsFromJar(connection.getJarFile(), resourcePrefix + "/", event);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private static void loadModelsFromDirectory(@NotNull Path directory, @NotNull ModelAssetsEvent event) {
+        try (Stream<Path> paths = Files.walk(directory)) {
+            paths.filter(Files::isRegularFile)
+                .filter(path -> isModelFile(path.getFileName().toString()))
+                .forEach(path -> {
+                    ModelAsset asset = ModelAsset.of(path);
+                    if (!event.assets().contains(asset)) {
+                        event.addAsset(asset);
+                    }
+                });
+        } catch (IOException ignored) {
+        }
+    }
+
+    private static void loadModelsFromJar(@NotNull JarFile jar, @NotNull String prefix, @NotNull ModelAssetsEvent event) {
+        Enumeration<JarEntry> entries = jar.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            if (entry.isDirectory()) {
+                continue;
+            }
+            String entryName = entry.getName();
+            if (!entryName.startsWith(prefix)) {
+                continue;
+            }
+            String fileName = entryName.substring(entryName.lastIndexOf('/') + 1);
+            if (!isModelFile(fileName)) {
+                continue;
+            }
+            String modelName = fileName.substring(0, fileName.lastIndexOf('.'));
+            try (InputStream in = jar.getInputStream(entry)) {
+                ModelAsset asset = ModelAsset.of(modelName, in.readAllBytes());
+                if (!event.assets().contains(asset)) {
+                    event.addAsset(asset);
+                }
+            } catch (IOException | IllegalArgumentException ignored) {
+            }
+        }
+    }
+
+    private static boolean isModelFile(@NotNull String fileName) {
+        String lower = fileName.toLowerCase(Locale.ROOT);
+        return lower.endsWith(".bbmodel") || lower.endsWith(".ajmodel");
+    }
+
+    private static @NotNull String bundledVersion() {
+        try (InputStream in = MinestomBetterModel.class.getClassLoader().getResourceAsStream("bettermodel/version.properties")) {
+            if (in != null) {
+                Properties properties = new Properties();
+                properties.load(in);
+                String version = properties.getProperty("version");
+                if (version != null && !version.isBlank()) {
+                    return version;
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        String implVersion = BetterModel.class.getPackage().getImplementationVersion();
+        return implVersion != null ? implVersion : "0.0.0";
+    }
+
+    private static void cleanEmptyDirectories(File dir) {
+        if (!dir.exists() || !dir.isDirectory()) {
+            return;
+        }
+        File[] children = dir.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child.isDirectory()) {
+                    cleanEmptyDirectories(child);
+                }
+            }
+        }
+        String[] remaining = dir.list();
+        if (remaining != null && remaining.length == 0) {
+            //noinspection ResultOfMethodCallIgnored
+            dir.delete();
+        }
+    }
+
     public void enable() {
         BetterModel.register(this);
         this.config = new MinestomConfig();
@@ -102,29 +203,7 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
         events.addChild(this.playerManager.events());
         events.addChild(this.entityManager.events());
 
-        this.eventBus.subscribe(this, ModelAssetsEvent.class, event -> {
-            if (event.type() == ModelRenderer.Type.PLAYER) {
-                byte[] bytes = loadSteveModelBytes();
-                if (bytes != null) {
-                    event.addAsset(ModelAsset.of("steve", bytes));
-                }
-            }
-        });
-    }
-
-    private static byte @Nullable [] loadSteveModelBytes() {
-        File devFile = new File("src/main/resources/bettermodel/players/steve.bbmodel");
-        if (devFile.exists() && devFile.isFile()) {
-            try {
-                return Files.readAllBytes(devFile.toPath());
-            } catch (IOException ignored) {}
-        }
-        try (InputStream in = MinestomBetterModel.class.getClassLoader().getResourceAsStream("bettermodel/players/steve.bbmodel")) {
-            if (in != null) {
-                return in.readAllBytes();
-            }
-        } catch (IOException ignored) {}
-        return null;
+        this.eventBus.subscribe(this, ModelAssetsEvent.class, MinestomBetterModel::loadBundledModels);
     }
 
     public void disable() {
@@ -134,22 +213,6 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
         events.removeChild(this.entityManager.events());
         this.managers.values().forEach(GlobalManager::end);
         MinestomScheduler.INSTANCE.shutdown();
-    }
-
-    private static @NotNull String bundledVersion() {
-        try (InputStream in = MinestomBetterModel.class.getClassLoader().getResourceAsStream("bettermodel/version.properties")) {
-            if (in != null) {
-                Properties properties = new Properties();
-                properties.load(in);
-                String version = properties.getProperty("version");
-                if (version != null && !version.isBlank()) {
-                    return version;
-                }
-            }
-        } catch (IOException ignored) {
-        }
-        String implVersion = BetterModel.class.getPackage().getImplementationVersion();
-        return implVersion != null ? implVersion : "0.0.0";
     }
 
     @Override
@@ -173,7 +236,6 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
                 pipeline.setStatus("Generating files...");
                 pipeline.setGoal(zipper.size());
                 PackResult pack = PacksKt.toGenerator(this.config.packType()).create(zipper, pipeline);
-                this.syncToGlobalAssets(pack);
                 cleanEmptyDirectories(this.dataFolder);
                 result = new BetterModelPlatform.ReloadResult.Success(this.firstLoad.compareAndSet(false, true), assetsTime, pack);
             }
@@ -196,20 +258,75 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
         this.reloadEnd = this.reloadEnd.andThen(consumer);
     }
 
-    @Override public @NotNull File dataFolder() { return this.dataFolder; }
-    @Override public BetterModelPlatform.@NotNull JarType jarType() { return BetterModelPlatform.JarType.FABRIC; }
-    @Override public boolean isSnapshot() { return false; }
-    @Override public @NotNull BetterModelConfig config() { return this.config; }
-    @Override public @NotNull MinecraftVersion version() { return this.version; }
-    @Override public @NonNull Semver semver() { return Objects.requireNonNull(this.semver); }
-    @Override public @NotNull NMS nms() { return this.nms; }
-    @Override public <T extends Manager> @NotNull T manager(@NotNull Class<T> managerClass) { return managerClass.cast(this.managers.get(managerClass)); }
-    @Override public @NotNull ModelScheduler scheduler() { return MinestomScheduler.INSTANCE; }
-    @Override public @NotNull PlatformAdapter adapter() { return MinestomAdapter.INSTANCE; }
-    @Override public @NotNull BetterModelLogger logger() { return this.logger; }
-    @Override public @NotNull BetterModelEvaluator evaluator() { return this.evaluator; }
-    @Override public @NotNull BetterModelEventBus eventBus() { return this.eventBus; }
-    @Override public boolean isEnabled() { return this.enabled; }
+    @Override
+    public @NotNull File dataFolder() {
+        return this.dataFolder;
+    }
+
+    @Override
+    public BetterModelPlatform.@NotNull JarType jarType() {
+        return BetterModelPlatform.JarType.FABRIC;
+    }
+
+    @Override
+    public boolean isSnapshot() {
+        return false;
+    }
+
+    @Override
+    public @NotNull BetterModelConfig config() {
+        return this.config;
+    }
+
+    @Override
+    public @NotNull MinecraftVersion version() {
+        return this.version;
+    }
+
+    @Override
+    public @NonNull Semver semver() {
+        return Objects.requireNonNull(this.semver);
+    }
+
+    @Override
+    public @NotNull NMS nms() {
+        return this.nms;
+    }
+
+    @Override
+    public <T extends Manager> @NotNull T manager(@NotNull Class<T> managerClass) {
+        return managerClass.cast(this.managers.get(managerClass));
+    }
+
+    @Override
+    public @NotNull ModelScheduler scheduler() {
+        return MinestomScheduler.INSTANCE;
+    }
+
+    @Override
+    public @NotNull PlatformAdapter adapter() {
+        return MinestomAdapter.INSTANCE;
+    }
+
+    @Override
+    public @NotNull BetterModelLogger logger() {
+        return this.logger;
+    }
+
+    @Override
+    public @NotNull BetterModelEvaluator evaluator() {
+        return this.evaluator;
+    }
+
+    @Override
+    public @NotNull BetterModelEventBus eventBus() {
+        return this.eventBus;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled;
+    }
 
     @Override
     public @Nullable InputStream getResource(@NotNull String path) {
@@ -230,50 +347,6 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
 
     @Override
     public void loadAssets(@NotNull ReloadPipeline pipeline, @NotNull String prefix, @NotNull BiConsumer<String, InputStream> consumer) {
-    }
-
-    private void syncToGlobalAssets(PackResult pack) {
-        File rootDir = this.dataFolder.getParentFile();
-        pack.stream().forEach(packByte -> {
-            String path = packByte.path().path();
-            if (!path.startsWith("assets/")) {
-                return;
-            }
-            File target = new File(rootDir, path);
-            if (target.exists() && target.length() == packByte.length()) {
-                return;
-            }
-            try {
-                File parent = target.getParentFile();
-                if (parent != null && !parent.exists()) {
-                    if (!parent.mkdirs()) {
-                        return;
-                    }
-                }
-                Files.write(target.toPath(), packByte.bytes());
-            } catch (IOException e) {
-                this.logger.warn(Component.text("Failed to write asset " + path + ": " + e.getMessage()));
-            }
-        });
-    }
-
-    private static void cleanEmptyDirectories(File dir) {
-        if (!dir.exists() || !dir.isDirectory()) {
-            return;
-        }
-        File[] children = dir.listFiles();
-        if (children != null) {
-            for (File child : children) {
-                if (child.isDirectory()) {
-                    cleanEmptyDirectories(child);
-                }
-            }
-        }
-        String[] remaining = dir.list();
-        if (remaining != null && remaining.length == 0) {
-            //noinspection ResultOfMethodCallIgnored
-            dir.delete();
-        }
     }
 
     private static final class Logger implements BetterModelLogger {

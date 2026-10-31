@@ -45,7 +45,9 @@ layout(location = 12) out vec2 faceUv;
 
 const int PBR_MARK_DUST_PARTICLES = -300;
 const int PBR_MARK_CURSOR_DATA = -500;
+const int PBR_MARK_TIMER = -600;
 const int CURSOR_PROBE_ROW_Y = 19;
+const int TIMER_TAG_G = 253;
 
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
@@ -64,6 +66,9 @@ void main() {
     const vec2 QUAD_UVS[4] = vec2[](vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0), vec2(1.0, 0.0));
     faceUv = QUAD_UVS[gl_VertexIndex % 4];
 
+    // Bones carrying the timer tint (minutes, 253, seconds) keep neutral lighting on non-timer faces
+    vec4 shadeColor = vertexTag.g == TIMER_TAG_G ? vec4(1.0, 1.0, 1.0, Color.a) : Color;
+
     if (customTexCoord.x >= 0.0) {
         gl_Position = ProjMat * ModelViewMat * vec4(pbrPos, 1.0);
     }
@@ -77,6 +82,17 @@ void main() {
         gl_Position = vec4((vec2(float(texelTag.b), float(CURSOR_PROBE_ROW_Y)) + quadCorner) / ScreenSize * 2.0 - 1.0, 0.999, 1.0);
         meshLocal = Color.rgb;
         pbrMark = PBR_MARK_CURSOR_DATA;
+    }
+
+    // Case timer screen encoding (timer.png texels are tagged with R=252, G=100, B=(y<<4)|x, A=255)
+    if (texelTag.r == 252 && texelTag.g == 100 && texelTag.a == 255) {
+        vec2 rawUv = vec2(float(texelTag.b & 15), float(texelTag.b >> 4)) / 15.0;
+        faceUv = 1.0 - rawUv;
+        int minutes = vertexTag.g == TIMER_TAG_G ? clamp(vertexTag.r & 63, 0, 63) : 0;
+        int seconds = vertexTag.g == TIMER_TAG_G ? clamp(vertexTag.b & 63, 0, 59) : 0;
+        int strikes = vertexTag.g == TIMER_TAG_G ? clamp((vertexTag.r >> 6) & 3, 0, 3) : 0;
+        meshLocal = vec3(float(minutes), float(seconds), float(strikes));
+        pbrMark = PBR_MARK_TIMER;
     }
 
     // Floating dust particles within the spotlight beam
@@ -112,7 +128,7 @@ void main() {
     sphericalVertexDistance = fog_spherical_distance(Position);
     cylindricalVertexDistance = fog_cylindrical_distance(Position);
     #endif
-    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
+    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, shadeColor);
     #ifndef OIT_ALPHA_ONLY
     lightMapColor = sample_lightmap(Sampler2, UV2);
     overlayColor = texelFetch(Sampler1, UV1, 0);

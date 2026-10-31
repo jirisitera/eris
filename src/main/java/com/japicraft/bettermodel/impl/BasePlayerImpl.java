@@ -3,7 +3,6 @@ package com.japicraft.bettermodel.impl;
 import com.japicraft.bettermodel.MinestomPlayer;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.emote.EmoteManager;
-import java.util.stream.Stream;
 import kr.toxicity.model.api.armor.PlayerArmor;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -17,6 +16,8 @@ import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.entity.vehicle.PlayerInputs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.stream.Stream;
 
 final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
     private final Player player;
@@ -37,6 +38,17 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
             return ModelProfile.of(info, ModelProfileSkin.EMPTY);
         }
         return ModelProfile.of(info, ProfileManagerImpl.INSTANCE.skin(skin.textures()));
+    }
+
+    private static float wrapDegrees(float degrees) {
+        float wrapped = degrees % 360.0f;
+        if (wrapped >= 180.0f) {
+            wrapped -= 360.0f;
+        }
+        if (wrapped < -180.0f) {
+            wrapped += 360.0f;
+        }
+        return wrapped;
     }
 
     @Override
@@ -90,17 +102,6 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
             return CameraAnchor.viewPitch(this.player);
         }
         return this.player.getPosition().pitch();
-    }
-
-    private static float wrapDegrees(float degrees) {
-        float wrapped = degrees % 360.0f;
-        if (wrapped >= 180.0f) {
-            wrapped -= 360.0f;
-        }
-        if (wrapped < -180.0f) {
-            wrapped += 360.0f;
-        }
-        return wrapped;
     }
 
     @Override

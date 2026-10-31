@@ -1,16 +1,6 @@
 package com.japicraft.bettermodel;
 
-import java.util.Objects;
-import java.util.UUID;
-import kr.toxicity.model.api.platform.PlatformAdapter;
-import kr.toxicity.model.api.platform.PlatformEntity;
-import kr.toxicity.model.api.platform.PlatformItemStack;
-import kr.toxicity.model.api.platform.PlatformLivingEntity;
-import kr.toxicity.model.api.platform.PlatformLocation;
-import kr.toxicity.model.api.platform.PlatformNamespace;
-import kr.toxicity.model.api.platform.PlatformOfflinePlayer;
-import kr.toxicity.model.api.platform.PlatformPlayer;
-import kr.toxicity.model.api.platform.PlatformWorld;
+import kr.toxicity.model.api.platform.*;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Entity;
@@ -22,6 +12,9 @@ import net.minestom.server.property.ServerProperties;
 import net.minestom.server.thread.TickThread;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
+import java.util.UUID;
 
 public final class MinestomAdapter implements PlatformAdapter {
     public static final MinestomAdapter INSTANCE = new MinestomAdapter();
@@ -110,14 +103,32 @@ public final class MinestomAdapter implements PlatformAdapter {
     // --- Embedded Platform Implementations ---
 
     public record MinestomEntity(@NotNull Entity source) implements PlatformEntity {
-        @Override public @NotNull UUID uuid() { return this.source.getUuid(); }
-        @Override public @NotNull PlatformLocation location() { return MinestomLocation.of(this.source); }
+        @Override
+        public @NotNull UUID uuid() {
+            return this.source.getUuid();
+        }
+
+        @Override
+        public @NotNull PlatformLocation location() {
+            return MinestomLocation.of(this.source);
+        }
     }
 
     public record MinestomLivingEntity(@NotNull LivingEntity source) implements PlatformLivingEntity {
-        @Override public @NotNull UUID uuid() { return this.source.getUuid(); }
-        @Override public @NotNull PlatformLocation location() { return MinestomLocation.of(this.source); }
-        @Override public @NotNull PlatformLocation eyeLocation() { return MinestomLocation.ofEye(this.source); }
+        @Override
+        public @NotNull UUID uuid() {
+            return this.source.getUuid();
+        }
+
+        @Override
+        public @NotNull PlatformLocation location() {
+            return MinestomLocation.of(this.source);
+        }
+
+        @Override
+        public @NotNull PlatformLocation eyeLocation() {
+            return MinestomLocation.ofEye(this.source);
+        }
     }
 
     public record MinestomOfflinePlayer(@NotNull UUID uuid, @Nullable String name) implements PlatformOfflinePlayer {

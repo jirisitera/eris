@@ -27,7 +27,7 @@ public final class ClientView {
     public static void reset(Player player) {
         player.setTag(MOUSE_YAW, 0.0F);
         player.setTag(MOUSE_PITCH, 0.0F);
-        player.removeTag(TAG);
+        player.setTag(TAG, new View(player.getPosition().yaw(), player.getPosition().pitch()));
     }
 
     public static boolean record(Player player, ClientPacket packet) {

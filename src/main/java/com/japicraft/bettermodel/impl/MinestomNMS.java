@@ -1,23 +1,12 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import kr.toxicity.model.api.bone.RenderedBone;
 import kr.toxicity.model.api.data.blueprint.ModelBoundingBox;
 import kr.toxicity.model.api.entity.BaseEntity;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.mount.MountController;
-import kr.toxicity.model.api.nms.HitBox;
-import kr.toxicity.model.api.nms.HitBoxListener;
-import kr.toxicity.model.api.nms.ModAnimationBundler;
-import kr.toxicity.model.api.nms.ModelDisplay;
-import kr.toxicity.model.api.nms.ModelNametag;
-import kr.toxicity.model.api.nms.NMS;
-import kr.toxicity.model.api.nms.NMSVersion;
-import kr.toxicity.model.api.nms.PacketBundler;
-import kr.toxicity.model.api.nms.PlayerChannelHandler;
+import kr.toxicity.model.api.nms.*;
 import kr.toxicity.model.api.platform.PlatformEntity;
 import kr.toxicity.model.api.platform.PlatformItemStack;
 import kr.toxicity.model.api.platform.PlatformLocation;
@@ -42,7 +31,15 @@ import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
 public final class MinestomNMS implements NMS {
+    private static @NotNull Color multiply(@NotNull RGBLike color, int rgb) {
+        return new Color(color.red() * (rgb >> 16 & 0xFF) / 255, color.green() * (rgb >> 8 & 0xFF) / 255, color.blue() * (rgb & 0xFF) / 255);
+    }
+
     @Override
     public @NotNull ModelDisplay create(@NotNull PlatformLocation location, double yOffset, @NotNull Consumer<ModelDisplay> initialConsumer) {
         ModelDisplayImpl display = new ModelDisplayImpl(location, yOffset);
@@ -87,10 +84,6 @@ public final class MinestomNMS implements NMS {
             ? new CustomModelData(List.of(), List.of(), List.of(), colors)
             : new CustomModelData(data.floats(), data.flags(), data.strings(), colors);
         return MinestomAdapter.adapt(item.with(DataComponents.CUSTOM_MODEL_DATA, tinted));
-    }
-
-    private static @NotNull Color multiply(@NotNull RGBLike color, int rgb) {
-        return new Color(color.red() * (rgb >> 16 & 0xFF) / 255, color.green() * (rgb >> 8 & 0xFF) / 255, color.blue() * (rgb & 0xFF) / 255);
     }
 
     @Override

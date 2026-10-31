@@ -5,6 +5,16 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import kr.toxicity.model.api.profile.ModelProfile;
+import kr.toxicity.model.api.profile.ModelProfileInfo;
+import kr.toxicity.model.api.profile.ModelProfileSkin;
+import kr.toxicity.model.api.profile.ModelProfileSupplier;
+import kr.toxicity.model.api.util.LogUtil;
+import kr.toxicity.model.manager.ProfileManagerImpl;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.Player;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,21 +27,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import kr.toxicity.model.api.profile.ModelProfile;
-import kr.toxicity.model.api.profile.ModelProfileInfo;
-import kr.toxicity.model.api.profile.ModelProfileSkin;
-import kr.toxicity.model.api.profile.ModelProfileSupplier;
-import kr.toxicity.model.api.util.LogUtil;
-import kr.toxicity.model.manager.ProfileManagerImpl;
-import net.minestom.server.MinecraftServer;
-import net.minestom.server.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 final class MinestomProfileSupplier implements ModelProfileSupplier {
     private final HttpClient http = HttpClient.newHttpClient();
     private final Cache<ModelProfileInfo, ModelProfile> cache = Caffeine.newBuilder().expireAfterAccess(5L, TimeUnit.MINUTES).build();
 
     MinestomProfileSupplier() {
+    }
+
+    private static @NotNull UUID undashed(@NotNull String id) {
+        return UUID.fromString(id.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
     }
 
     @Override
@@ -65,9 +70,9 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
 
     private @NotNull CompletableFuture<ModelProfile> lookUp(@NotNull ModelProfileInfo info) {
         CompletableFuture<String> id = info.name() != null
-                ? this.get("https://api.minecraftservices.com/minecraft/profile/lookup/name/" + info.name())
-                      .thenApply(json -> json.getAsJsonObject().get("id").getAsString())
-                : CompletableFuture.completedFuture(info.id().toString().replace("-", ""));
+            ? this.get("https://api.minecraftservices.com/minecraft/profile/lookup/name/" + info.name())
+            .thenApply(json -> json.getAsJsonObject().get("id").getAsString())
+            : CompletableFuture.completedFuture(info.id().toString().replace("-", ""));
 
         return id.thenCompose(uuid -> this.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid)).thenApply(json -> {
             JsonObject profile = json.getAsJsonObject();
@@ -100,9 +105,5 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
                 throw new UncheckedIOException(e);
             }
         });
-    }
-
-    private static @NotNull UUID undashed(@NotNull String id) {
-        return UUID.fromString(id.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
     }
 }

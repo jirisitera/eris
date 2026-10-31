@@ -1,7 +1,5 @@
 package com.japicraft.bettermodel.impl;
 
-import java.util.HashMap;
-import java.util.Map;
 import kr.toxicity.model.api.nms.AnimationBundler;
 import kr.toxicity.model.api.nms.DisplayTransformer;
 import kr.toxicity.model.api.nms.PacketBundler;
@@ -13,6 +11,9 @@ import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import java.util.HashMap;
+import java.util.Map;
 
 final class DisplayTransformerImpl implements DisplayTransformer {
     private final int id;

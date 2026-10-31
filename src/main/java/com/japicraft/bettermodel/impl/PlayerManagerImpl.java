@@ -1,9 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomPlayer;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import kr.toxicity.model.api.manager.PlayerManager;
 import kr.toxicity.model.api.nms.PlayerChannelHandler;
 import kr.toxicity.model.api.pack.PackZipper;
@@ -22,6 +19,10 @@ import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.trait.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("resource")
 final class PlayerManagerImpl implements PlayerManager, GlobalManager {

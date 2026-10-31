@@ -3,7 +3,6 @@ package com.japicraft.events;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.ClientView;
 import com.japicraft.camera.CursorProbe;
-import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
@@ -32,10 +31,7 @@ public final class PlayerUpdateManager {
                 return;
             }
             CameraAnchor.updateTarget(player);
-
             CursorProbe.update(player);
-            CursorProbe.ScreenPosition cursor = CursorProbe.screenPosition(player);
-            player.sendActionBar(Component.text(String.format("Sector %s (x=%.3f, y=%.3f)", CursorProbe.sector(player), cursor.x(), cursor.y())));
         });
     }
 }

@@ -1,10 +1,5 @@
 package com.japicraft.bettermodel.impl;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import kr.toxicity.model.api.scheduler.ModelScheduler;
 import kr.toxicity.model.api.scheduler.ModelTask;
 import kr.toxicity.model.api.util.LogUtil;
@@ -13,6 +8,12 @@ import net.minestom.server.timer.Task;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MinestomScheduler implements ModelScheduler {
     public static final MinestomScheduler INSTANCE = new MinestomScheduler();
@@ -74,6 +75,19 @@ public final class MinestomScheduler implements ModelScheduler {
         this.pool.shutdownNow();
     }
 
+    private record SyncTask(Task task) implements ModelTask {
+
+        @Override
+        public boolean isCancelled() {
+            return !this.task.isAlive();
+        }
+
+        @Override
+        public void cancel() {
+            this.task.cancel();
+        }
+    }
+
     private final class AsyncTask implements Runnable, ModelTask {
         private final Runnable runnable;
         private final java.util.concurrent.Future<?> future;
@@ -102,17 +116,4 @@ public final class MinestomScheduler implements ModelScheduler {
             this.future.cancel(true);
         }
     }
-
-    private record SyncTask(Task task) implements ModelTask {
-
-        @Override
-            public boolean isCancelled() {
-                return !this.task.isAlive();
-            }
-
-            @Override
-            public void cancel() {
-                this.task.cancel();
-            }
-        }
 }

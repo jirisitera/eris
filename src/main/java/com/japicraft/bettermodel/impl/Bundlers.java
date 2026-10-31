@@ -1,8 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import java.util.ArrayList;
-import java.util.List;
 import kr.toxicity.model.api.nms.ModAnimationBundler;
 import kr.toxicity.model.api.nms.PacketBundler;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -12,6 +10,9 @@ import net.minestom.server.network.packet.server.play.BundlePacket;
 import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
 import net.minestom.server.network.packet.server.play.EntityMetaDataPacket;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Bundlers {
     private static final int MAX_BUNDLE_SIZE = 4096;

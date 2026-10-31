@@ -10,7 +10,8 @@ import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record MinestomLocation(@Nullable Instance instance, double x, double y, double z, float pitch, float yaw) implements PlatformLocation {
+public record MinestomLocation(@Nullable Instance instance, double x, double y, double z, float pitch,
+                               float yaw) implements PlatformLocation {
     public static @NotNull MinestomLocation of(@Nullable Instance instance, @NotNull Pos pos) {
         return new MinestomLocation(instance, pos.x(), pos.y(), pos.z(), pos.pitch(), pos.yaw());
     }

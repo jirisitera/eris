@@ -1,6 +1,10 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
+// @formatter:off
+#include <eris:timer.glsl>
+// @formatter:on
+
 uniform sampler2D InSampler;
 
 layout(std140) uniform BloomConfig {
@@ -30,6 +34,20 @@ vec3 sampleBloomHighlight(vec2 uv) {
     float maxChannel = max(color.r, max(color.g, color.b));
     float minChannel = min(color.r, min(color.g, color.b));
     bool isWhiteSurface = (maxChannel - minChannel) < 0.2 * maxChannel;
+
+    // Case timer screen LED glow (red channel 250)
+    if (rgb255.r == 250) {
+        vec2 timerUv;
+        int timerMinutes;
+        int timerSeconds;
+        int timerStrikes;
+        if (!decodeTimer(InSampler, pixelCoord, timerUv, timerMinutes, timerSeconds, timerStrikes)) {
+            return vec3(0.0);
+        }
+        vec2 centered = (timerUv - 0.5) * vec2(2.0, 1.0);
+        float glow = exp(-dot(centered * vec2(1.1, 2.2), centered * vec2(1.1, 2.2)) * 2.5);
+        return vec3(0.55, 0.40, 0.08) * glow;
+    }
 
     // Check emissive parity marker: R odd, G even, B odd
     bool isEmissive =
