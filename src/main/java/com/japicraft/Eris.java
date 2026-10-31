@@ -7,6 +7,7 @@ import com.japicraft.events.PlayerInputManager;
 import com.japicraft.events.PlayerSetupManager;
 import com.japicraft.events.PlayerUpdateManager;
 import com.japicraft.server.ServerListManager;
+import com.japicraft.bettermodel.BetterModelMinestom;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.minestom.server.Auth;
@@ -21,11 +22,6 @@ public final class Eris {
     public static final String NAMESPACE_SEPARATOR = ":";
     public static final ComponentLogger LOGGER = ComponentLogger.logger(Eris.class);
     public static CommandSender CONSOLE;
-
-    // TODO:
-    // - numbers on keyboard open cameras
-    // - leaning also moves avatar hands
-    // - fix node alignment
 
     void main() {
         MinecraftServer server = MinecraftServer.init(new Auth.Online());
@@ -69,7 +65,6 @@ public final class Eris {
     }
 
     private void registerManagers() {
-
         PlayerSetupManager.register();
         PlayerUpdateManager.register();
         PlayerInputManager.register();
@@ -77,5 +72,8 @@ public final class Eris {
         InstanceManager.register();
         ServerListManager.register();
         //GlobalResourcePack.register();
+
+        BetterModelMinestom.register();
+        LOGGER.atInfo().log(Component.text("Loaded BetterModel."));
     }
 }

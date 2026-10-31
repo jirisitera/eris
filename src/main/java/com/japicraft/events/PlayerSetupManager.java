@@ -1,10 +1,10 @@
 package com.japicraft.events;
 
-import com.japicraft.camera.Avatar;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.CursorProbe;
-import com.japicraft.camera.EmoteWheel;
+import com.japicraft.emote.EmoteWheel;
 import com.japicraft.server.PostEffect;
+import com.japicraft.emote.EmoteManager;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
@@ -23,17 +23,19 @@ public final class PlayerSetupManager {
             player.setInvisible(true);
 
             CameraAnchor.attach(player);
-            Avatar.attach(player);
             CursorProbe.update(player);
+
+            player.scheduler().scheduleNextTick(() -> EmoteManager.play(player, "steve", "idle"));
         });
         // leave event
         MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {
             Player player = event.getPlayer();
 
             CameraAnchor.detach(player);
-            Avatar.detach(player);
             CursorProbe.detach(player);
             EmoteWheel.detach(player);
+
+            EmoteManager.stop(player);
         });
     }
 }

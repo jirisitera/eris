@@ -1,6 +1,7 @@
 package com.japicraft.camera;
 
 import com.japicraft.Eris;
+import com.japicraft.emote.EmoteWheel;
 import net.minestom.server.color.Color;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
