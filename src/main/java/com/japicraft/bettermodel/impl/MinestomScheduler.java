@@ -9,8 +9,7 @@ import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,16 +17,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class MinestomScheduler implements ModelScheduler {
     public static final MinestomScheduler INSTANCE = new MinestomScheduler();
     private final AtomicBoolean enabled = new AtomicBoolean(true);
-    private final ScheduledExecutorService pool;
+    private final ScheduledThreadPoolExecutor pool;
 
     private MinestomScheduler() {
         AtomicInteger threads = new AtomicInteger();
-        this.pool = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), runnable -> {
+        this.pool = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), runnable -> {
             Thread thread = new Thread(runnable, "BetterModel-Async-Scheduler-" + threads.getAndIncrement());
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler((t, e) -> LogUtil.handleException("Exception has occurred in " + t.getName(), e));
             return thread;
         });
+        this.pool.setRemoveOnCancelPolicy(true);
     }
 
     @Override
@@ -101,8 +101,6 @@ public final class MinestomScheduler implements ModelScheduler {
         public void run() {
             if (MinestomScheduler.this.enabled.get()) {
                 this.runnable.run();
-            } else {
-                this.cancel();
             }
         }
 

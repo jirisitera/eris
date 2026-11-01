@@ -232,6 +232,7 @@ public final class MinestomBetterModel implements BetterModelPlatformImpl {
                 for (GlobalManager manager : this.managers.values()) {
                     manager.reload(pipeline, zipper);
                 }
+                MinestomPlayerModels.loadDefaults();
                 long assetsTime = System.currentTimeMillis() - start;
                 pipeline.setStatus("Generating files...");
                 pipeline.setGoal(zipper.size());

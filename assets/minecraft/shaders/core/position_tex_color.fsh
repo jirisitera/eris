@@ -49,10 +49,10 @@ void main() {
         );
 
         ivec3 marker = pixel.x == 26
-            ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8)
-            : pixel.x == 27
-                ? ivec3(encodedPitch & 255, 0, 0)
-                : MARKER_COLOR;
+        ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8)
+        : pixel.x == 27
+        ? ivec3(encodedPitch & 255, 0, 0)
+        : MARKER_COLOR;
 
         fragColor = vec4(vec3(marker) / 255.0, 1.0);
         return;

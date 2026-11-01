@@ -11,7 +11,7 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerPluginMessageEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,7 +36,7 @@ public final class VoiceChatManager {
     private static final Set<UUID> MUTED_PLAYERS = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> DEAFENED_PLAYERS = ConcurrentHashMap.newKeySet();
 
-    private static VoiceChatServer server;
+    private static volatile VoiceChatServer server;
 
     private VoiceChatManager() {
     }
@@ -242,7 +242,7 @@ public final class VoiceChatManager {
     }
 
     private static void sendAllStates(Player receiver) {
-        Collection<VoiceChatPlayerState> allStates = STATES.values();
+        List<VoiceChatPlayerState> allStates = List.copyOf(STATES.values());
         VoiceChatBuffer buf = new VoiceChatBuffer();
         buf.writeInt(allStates.size());
         for (VoiceChatPlayerState state : allStates) {

@@ -16,22 +16,26 @@ repositories {
 dependencies {
     // core
     implementation("net.minestom:minestom:26_3-SNAPSHOT")
-    // logging
-    implementation("org.slf4j:slf4j-simple:2.0.19")
+    // Logging API for application code and runtime backend.
+    implementation("org.slf4j:slf4j-api:2.0.20")
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.19")
     // nbt structure import
     implementation("dev.hollowcube:schem:2.0.1")
 
     // simple voice chat api
     implementation("de.maxhenkel.voicechat:voicechat-api:2.6.27")
 
-    // bettermodel & dependencies
+    // BetterModel and libraries used directly by the Minestom adapter.
     implementation("io.github.toxicity188:bettermodel-core:3.6.0")
-    implementation("io.github.toxicity188:armormodel:1.2.0")
-    implementation("gg.moonflower:molang-compiler:3.1.1.19")
-    implementation("com.google.guava:guava:33.4.0-jre")
     implementation("org.joml:joml:1.10.8")
     implementation("org.semver4j:semver4j:6.0.0")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.2.4")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.3.1")
+    implementation("com.google.code.gson:gson:2.14.0")
+
+    // BetterModel expects these at runtime but does not publish them transitively.
+    runtimeOnly("io.github.toxicity188:armormodel:1.2.0")
+    runtimeOnly("gg.moonflower:molang-compiler:3.1.1.19")
+    runtimeOnly("com.google.guava:guava:33.4.0-jre")
 }
 
 java {

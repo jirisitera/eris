@@ -8,6 +8,8 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.play.SetSlotPacket;
+import net.minestom.server.network.packet.server.play.BundlePacket;
+import net.minestom.server.network.packet.server.play.PlayerRotationPacket;
 import net.minestom.server.tag.Tag;
 
 import java.util.List;
@@ -47,6 +49,18 @@ public final class CursorProbe {
 
     public static void forceUpdate(Player player) {
         update(player, true);
+    }
+
+    public static void updateWithRotation(Player player, PlayerRotationPacket rotation) {
+        // Do not render an intermediate frame with a new pitch and the old wheel/probe data.
+        player.sendPacket(new BundlePacket());
+        try {
+            update(player);
+            player.sendPacket(new SetSlotPacket(0, 0, (short) 45, player.getEquipment(EquipmentSlot.OFF_HAND)));
+            player.sendPacket(rotation);
+        } finally {
+            player.sendPacket(new BundlePacket());
+        }
     }
 
     public static void update(Player player, boolean force) {

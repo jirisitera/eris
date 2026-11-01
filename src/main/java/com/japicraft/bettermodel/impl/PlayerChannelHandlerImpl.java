@@ -189,16 +189,17 @@ final class PlayerChannelHandlerImpl implements PlayerChannelHandler {
     }
 
     private @Nullable ServerPacket items(@NotNull WindowItemsPacket packet) {
-        List<ItemStack> items = new ArrayList<>(packet.items());
-        boolean changed = false;
-        for (int slot = 0; slot < items.size(); ++slot) {
-            if (this.isNotEquipmentSlot(slot) || items.get(slot).isAir()) {
+        List<ItemStack> items = null;
+        for (int slot = 0; slot < packet.items().size(); ++slot) {
+            if (this.isNotEquipmentSlot(slot) || packet.items().get(slot).isAir()) {
                 continue;
             }
+            if (items == null) {
+                items = new ArrayList<>(packet.items());
+            }
             items.set(slot, ItemStack.AIR);
-            changed = true;
         }
-        return changed ? new WindowItemsPacket(packet.windowId(), packet.stateId(), items, packet.carriedItem()) : null;
+        return items != null ? new WindowItemsPacket(packet.windowId(), packet.stateId(), items, packet.carriedItem()) : null;
     }
 
     void incoming(@NotNull PlayerPacketEvent event) {

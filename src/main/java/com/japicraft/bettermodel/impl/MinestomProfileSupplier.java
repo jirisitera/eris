@@ -1,5 +1,6 @@
 package com.japicraft.bettermodel.impl;
 
+import com.japicraft.bettermodel.BetterModelPackServer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonElement;
@@ -24,13 +25,19 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 final class MinestomProfileSupplier implements ModelProfileSupplier {
-    private final HttpClient http = HttpClient.newHttpClient();
-    private final Cache<ModelProfileInfo, ModelProfile> cache = Caffeine.newBuilder().expireAfterAccess(5L, TimeUnit.MINUTES).build();
+    // Minecraft 26.3 DefaultPlayerSkin order: all slim variants, then all wide variants.
+    private static final String[] DEFAULT_SKINS = {
+        "alex", "ari", "efe", "kai", "makena", "noor", "steve", "sunny", "zuri"
+    };
+    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private final Cache<ModelProfileInfo, CompletableFuture<ModelProfile>> cache = Caffeine.newBuilder().expireAfterWrite(5L, TimeUnit.MINUTES).build();
 
     MinestomProfileSupplier() {
     }
@@ -42,7 +49,7 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
     @Override
     public @NotNull ModelProfile.Uncompleted supply(@NotNull ModelProfileInfo info) {
         Player online = MinecraftServer.getConnectionManager().getOnlinePlayerByUuid(info.id());
-        if (online != null) {
+        if (online != null && online.getSkin() != null) {
             return BasePlayerImpl.profileOf(online).asUncompleted();
         }
         return new ModelProfile.Uncompleted() {
@@ -53,17 +60,15 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
 
             @Override
             public @NotNull CompletableFuture<ModelProfile> complete() {
-                ModelProfile cached = cache.getIfPresent(info);
-                if (cached != null) {
-                    return CompletableFuture.completedFuture(cached);
-                }
-                return lookUp(info).thenApply(profile -> {
-                    cache.put(info, profile);
-                    return profile;
-                }).exceptionally(e -> {
+                return cache.get(info, key -> lookUp(key).exceptionally(e -> {
                     LogUtil.handleException("Unable to get " + info.name() + "'s skin data.", e);
                     return this.fallback();
-                });
+                }));
+            }
+
+            @Override
+            public @NotNull ModelProfile fallback() {
+                return defaultProfile(info);
             }
         };
     }
@@ -71,28 +76,46 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
     private @NotNull CompletableFuture<ModelProfile> lookUp(@NotNull ModelProfileInfo info) {
         CompletableFuture<String> id = info.name() != null
             ? this.get("https://api.minecraftservices.com/minecraft/profile/lookup/name/" + info.name())
-            .thenApply(json -> json.getAsJsonObject().get("id").getAsString())
+            .thenApply(json -> json.isJsonNull() ? null : json.getAsJsonObject().get("id").getAsString())
             : CompletableFuture.completedFuture(info.id().toString().replace("-", ""));
 
-        return id.thenCompose(uuid -> this.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid)).thenApply(json -> {
+        return id.thenCompose(uuid -> uuid == null ? CompletableFuture.completedFuture(com.google.gson.JsonNull.INSTANCE)
+            : this.get("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid)).thenApply(json -> {
+            if (json.isJsonNull()) return defaultProfile(info);
             JsonObject profile = json.getAsJsonObject();
-            ModelProfileInfo resolved = new ModelProfileInfo(MinestomProfileSupplier.undashed(profile.get("id").getAsString()), profile.get("name").getAsString());
-            ModelProfileSkin skin = ModelProfileSkin.EMPTY;
+            UUID accountId = MinestomProfileSupplier.undashed(profile.get("id").getAsString());
+            ModelProfileSkin skin = defaultProfile(new ModelProfileInfo(accountId, info.name())).skin();
             if (profile.has("properties")) {
                 for (JsonElement property : profile.getAsJsonArray("properties")) {
                     JsonObject object = property.getAsJsonObject();
                     if (!"textures".equals(object.get("name").getAsString())) continue;
-                    skin = ProfileManagerImpl.INSTANCE.skin(object.get("value").getAsString());
+                    ModelProfileSkin supplied = ProfileManagerImpl.INSTANCE.skin(object.get("value").getAsString());
+                    if (supplied.skin() != null) skin = supplied;
                 }
             }
-            return ModelProfile.of(resolved, skin);
+            // Keep the server identity: offline-mode UUIDs differ from Mojang account UUIDs.
+            return ModelProfile.of(info, skin);
         });
     }
 
+    static @NotNull ModelProfile defaultProfile(@NotNull ModelProfileInfo info) {
+        int index = Math.floorMod(info.id().hashCode(), DEFAULT_SKINS.length * 2);
+        boolean slim = index < DEFAULT_SKINS.length;
+        String path = (slim ? "slim/" : "wide/") + DEFAULT_SKINS[index % DEFAULT_SKINS.length] + ".png";
+        String url = BetterModelPackServer.getDefaultSkinUri(path).toString();
+        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + url
+            + "\",\"metadata\":{\"model\":\"" + (slim ? "slim" : "default") + "\"}}}}";
+        String raw = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        return ModelProfile.of(info, new ModelProfileSkin(URI.create(url), null, slim, raw));
+    }
+
     private @NotNull CompletableFuture<JsonElement> get(@NotNull String url) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url)).GET().build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(10)).GET().build();
         return this.http.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream()).thenApply(response -> {
             try (InputStream body = response.body()) {
+                if (response.statusCode() == 204 || response.statusCode() == 404) {
+                    return com.google.gson.JsonNull.INSTANCE;
+                }
                 JsonElement jsonElement;
                 try (InputStreamReader reader = new InputStreamReader(body, StandardCharsets.UTF_8)) {
                     if (response.statusCode() != 200) {

@@ -90,7 +90,7 @@ public final class CameraAnchor {
             return;
         }
 
-        if (EmoteWheel.isOpen(player)) {
+        if (EmoteWheel.isTurningPaused(player)) {
             view.targetYawOffset = view.yawOffset;
             view.targetPitch = view.pitch;
             return;

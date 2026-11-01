@@ -13,9 +13,9 @@ import java.net.SocketException;
 import java.nio.channels.AsynchronousCloseException;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public final class VoiceChatServer extends Thread {
@@ -39,7 +39,7 @@ public final class VoiceChatServer extends Thread {
     private final int port;
     private final String bindAddress;
     private final VoicechatSocket socket;
-    private final BlockingQueue<RawUdpPacket> packetQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<RawUdpPacket> packetQueue = new ArrayBlockingQueue<>(1024);
     private final Map<UUID, ClientConnection> connections = new ConcurrentHashMap<>();
     private final Map<UUID, ClientConnection> unCheckedConnections = new ConcurrentHashMap<>();
     private final Map<UUID, VoiceChatSecret> secrets = new ConcurrentHashMap<>();
@@ -65,13 +65,9 @@ public final class VoiceChatServer extends Thread {
         return soundBuf.toByteArray();
     }
 
-    private static ClientConnection findByAddress(Map<UUID, ClientConnection> map, SocketAddress address) {
-        for (ClientConnection conn : map.values()) {
-            if (conn.address().equals(address)) {
-                return conn;
-            }
-        }
-        return null;
+    private static ClientConnection findConnection(Map<UUID, ClientConnection> map, UUID playerId, SocketAddress address) {
+        ClientConnection connection = map.get(playerId);
+        return connection != null && connection.address().equals(address) ? connection : null;
     }
 
     @Override
@@ -83,7 +79,12 @@ public final class VoiceChatServer extends Thread {
 
             while (!socket.isClosed()) {
                 try {
-                    packetQueue.add(socket.read());
+                    RawUdpPacket packet = socket.read();
+                    if (!packetQueue.offer(packet)) {
+                        // Prefer fresh audio when processing falls behind.
+                        packetQueue.poll();
+                        packetQueue.offer(packet);
+                    }
                 } catch (Exception e) {
                     if (socket.isClosed() || (e instanceof SocketException && e.getCause() instanceof AsynchronousCloseException)) {
                         break;
@@ -92,6 +93,10 @@ public final class VoiceChatServer extends Thread {
             }
         } catch (Exception e) {
             Eris.LOGGER.atError().setCause(e).log(Component.text("Failed to run Simple Voice Chat UDP server."));
+        } finally {
+            processThread.close();
+            socket.close();
+            packetQueue.clear();
         }
     }
 
@@ -152,6 +157,7 @@ public final class VoiceChatServer extends Thread {
     public void close() {
         processThread.close();
         socket.close();
+        packetQueue.clear();
         connections.clear();
         unCheckedConnections.clear();
         secrets.clear();
@@ -159,7 +165,7 @@ public final class VoiceChatServer extends Thread {
 
     private void processRawPacket(RawUdpPacket rawPacket) {
         byte[] data = rawPacket.getData();
-        if (data.length < 1 + 16) {
+        if (data.length < 1 + 16 || System.currentTimeMillis() - rawPacket.getTimestamp() > DEFAULT_PACKET_TTL_MS) {
             return;
         }
         VoiceChatBuffer outer = new VoiceChatBuffer(data);
@@ -212,9 +218,9 @@ public final class VoiceChatServer extends Thread {
                 }
             }
             case PACKET_CONNECTION_CHECK -> {
-                ClientConnection unchecked = findByAddress(unCheckedConnections, senderAddress);
+                ClientConnection unchecked = findConnection(unCheckedConnections, playerId, senderAddress);
                 if (unchecked == null) {
-                    ClientConnection existing = findByAddress(connections, senderAddress);
+                    ClientConnection existing = findConnection(connections, playerId, senderAddress);
                     if (existing != null) {
                         VoiceChatSecret existingSecret = secrets.get(existing.playerUuid());
                         if (existingSecret != null) {
@@ -230,7 +236,7 @@ public final class VoiceChatServer extends Thread {
                 VoiceChatManager.onPlayerVoiceConnected(unchecked.playerUuid());
             }
             case PACKET_MIC -> {
-                ClientConnection conn = findByAddress(connections, senderAddress);
+                ClientConnection conn = findConnection(connections, playerId, senderAddress);
                 if (conn == null) {
                     return;
                 }
@@ -240,13 +246,13 @@ public final class VoiceChatServer extends Thread {
                 onMicPacket(conn.playerUuid(), opusData, sequenceNumber);
             }
             case PACKET_KEEP_ALIVE -> {
-                ClientConnection conn = findByAddress(connections, senderAddress);
+                ClientConnection conn = findConnection(connections, playerId, senderAddress);
                 if (conn != null) {
                     conn.setLastKeepAliveResponse(System.currentTimeMillis());
                 }
             }
             case PACKET_PING -> {
-                ClientConnection conn = findByAddress(connections, senderAddress);
+                ClientConnection conn = findConnection(connections, playerId, senderAddress);
                 if (conn != null) {
                     UUID pingId = inner.readUUID();
                     long pingTime = inner.readLong();
@@ -388,7 +394,8 @@ public final class VoiceChatServer extends Thread {
                         sendKeepAlives();
                         lastKeepAlive = now;
                     }
-                    RawUdpPacket rawPacket = packetQueue.poll(10, TimeUnit.MILLISECONDS);
+                    long wait = Math.max(1L, KEEP_ALIVE_INTERVAL_MS - (System.currentTimeMillis() - lastKeepAlive));
+                    RawUdpPacket rawPacket = packetQueue.poll(wait, TimeUnit.MILLISECONDS);
                     if (rawPacket != null) {
                         processRawPacket(rawPacket);
                     }
@@ -399,6 +406,7 @@ public final class VoiceChatServer extends Thread {
 
         void close() {
             running = false;
+            interrupt();
         }
     }
 }

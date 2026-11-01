@@ -2,6 +2,7 @@ package com.japicraft.emote;
 
 import com.japicraft.bettermodel.MinestomAdapter;
 import com.japicraft.bettermodel.impl.MinestomScheduler;
+import com.japicraft.bettermodel.impl.MinestomPlayerModels;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.environment.AnimationManager;
 import kr.toxicity.model.api.BetterModel;
@@ -65,7 +66,7 @@ public class EmoteManager {
         float yOffset = getYOffset(player);
 
         // Re-use or obtain tracker WITHOUT closing the registry
-        EntityTracker tracker = selectedLimb.getOrCreate(
+        EntityTracker tracker = MinestomPlayerModels.getOrCreate(selectedLimb,
             MinestomAdapter.adapt(player),
             TrackerModifier.DEFAULT,
             created -> {

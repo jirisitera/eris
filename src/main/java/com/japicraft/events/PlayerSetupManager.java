@@ -12,7 +12,6 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoadedEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.network.packet.server.common.PostEffectsPacket;
-import net.minestom.server.timer.TaskSchedule;
 
 import java.util.List;
 
@@ -28,13 +27,9 @@ public final class PlayerSetupManager {
             CameraAnchor.attach(player);
             ActionBarService.schedule(player);
 
-            player.scheduler().scheduleNextTick(() -> {
-                EmoteManager.play(player, "steve", "idle");
-            });
+            player.scheduler().scheduleNextTick(() -> EmoteManager.play(player, "steve", "idle"));
         });
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerLoadedEvent.class, event -> {
-            CursorProbe.forceUpdate(event.getPlayer());
-        });
+        MinecraftServer.getGlobalEventHandler().addListener(PlayerLoadedEvent.class, event -> CursorProbe.forceUpdate(event.getPlayer()));
 
         // leave event
         MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {

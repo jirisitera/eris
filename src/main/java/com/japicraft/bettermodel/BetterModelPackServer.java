@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
@@ -43,10 +44,9 @@ public final class BetterModelPackServer {
     private static final int DEFAULT_PORT = 8080;
     private static final String DEFAULT_BIND = "0.0.0.0";
 
-    private static @Nullable HttpServer server;
-    private static volatile byte @Nullable [] zipBytes;
-    private static volatile @Nullable String sha1Hash;
-    private static volatile @Nullable UUID packId;
+    private static volatile @Nullable HttpServer server;
+    private static @Nullable ExecutorService executor;
+    private static volatile @Nullable CompiledPack compiledPack;
     private static boolean listenerRegistered;
 
     private BetterModelPackServer() {
@@ -63,20 +63,24 @@ public final class BetterModelPackServer {
         try {
             HttpServer http = HttpServer.create(new InetSocketAddress(bindAddress, port), 0);
             http.createContext("/bettermodel.zip", new PackHandler());
-            http.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+            http.createContext("/bettermodel-skins/", new DefaultSkinHandler());
+            executor = Executors.newVirtualThreadPerTaskExecutor();
+            http.setExecutor(executor);
             http.start();
             server = http;
             log.info("BetterModel pack server listening on {}:{}", bindAddress, port);
         } catch (IOException e) {
+            if (executor != null) {
+                executor.shutdownNow();
+                executor = null;
+            }
             log.error("Failed to start BetterModel pack server on {}:{}", bindAddress, port, e);
             return;
         }
 
         if (!listenerRegistered) {
             listenerRegistered = true;
-            MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> {
-                sendPack(event.getPlayer());
-            });
+            MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> sendPack(event.getPlayer()));
         }
     }
 
@@ -87,6 +91,11 @@ public final class BetterModelPackServer {
         }
         server = null;
         http.stop(0);
+        if (executor != null) {
+            executor.shutdownNow();
+            executor = null;
+        }
+        compiledPack = null;
         log.info("BetterModel pack server stopped.");
     }
 
@@ -108,14 +117,16 @@ public final class BetterModelPackServer {
                     }
                     if (entries.add(path)) {
                         ZipEntry entry = new ZipEntry(path);
+                        entry.setTime(0L);
                         zos.putNextEntry(entry);
                         zos.write(packByte.bytes());
                         zos.closeEntry();
                     }
                 }
 
-                if (!hasMcmeta && pack.meta() != null) {
+                if (!hasMcmeta) {
                     ZipEntry entry = new ZipEntry("pack.mcmeta");
+                    entry.setTime(0L);
                     zos.putNextEntry(entry);
                     zos.write(pack.meta().toJson().toString().getBytes(StandardCharsets.UTF_8));
                     zos.closeEntry();
@@ -127,9 +138,12 @@ public final class BetterModelPackServer {
             String hash = calculateSha1(bytes);
             UUID id = UUID.nameUUIDFromBytes(hash.getBytes(StandardCharsets.UTF_8));
 
-            zipBytes = bytes;
-            sha1Hash = hash;
-            packId = id;
+            CompiledPack previous = compiledPack;
+            if (previous != null && previous.hash().equals(hash)) {
+                log.info("BetterModel resource pack is unchanged ({} bytes, sha1: {})", bytes.length, hash);
+                return;
+            }
+            compiledPack = new CompiledPack(bytes, hash, id);
 
             log.info("BetterModel resource pack compiled ({} bytes, sha1: {})", bytes.length, hash);
 
@@ -142,18 +156,16 @@ public final class BetterModelPackServer {
     }
 
     public static void sendPack(@NotNull Player player) {
-        byte[] currentPack = zipBytes;
-        String currentHash = sha1Hash;
-        UUID currentId = packId;
+        CompiledPack current = compiledPack;
 
-        if (currentPack == null || currentHash == null || currentId == null) {
+        if (current == null) {
             log.warn("Cannot send BetterModel resource pack to {}: pack is not ready yet.", player.getUsername());
             return;
         }
 
         URI uri = getUriFor(player);
         boolean required = Boolean.parseBoolean(System.getProperty(REQUIRED_PROPERTY, "true"));
-        ResourcePackInfo info = ResourcePackInfo.resourcePackInfo(currentId, uri, currentHash);
+        ResourcePackInfo info = ResourcePackInfo.resourcePackInfo(current.id(), uri, current.hash());
         ResourcePackRequest request = ResourcePackRequest.resourcePackRequest()
             .prompt(Component.text("This server requires custom models for entities and items."))
             .packs(info)
@@ -164,12 +176,11 @@ public final class BetterModelPackServer {
     }
 
     public static @Nullable ResourcePackInfo getPackInfo(@NotNull Player player) {
-        String currentHash = sha1Hash;
-        UUID currentId = packId;
-        if (currentHash == null || currentId == null) {
+        CompiledPack current = compiledPack;
+        if (current == null) {
             return null;
         }
-        return ResourcePackInfo.resourcePackInfo(currentId, getUriFor(player), currentHash);
+        return ResourcePackInfo.resourcePackInfo(current.id(), getUriFor(player), current.hash());
     }
 
     public static @NotNull URI getUriFor(@NotNull Player player) {
@@ -194,16 +205,30 @@ public final class BetterModelPackServer {
         return Integer.getInteger(PORT_PROPERTY, DEFAULT_PORT);
     }
 
+    /** Local URL for BetterModel's server-side texture reader. */
+    public static @NotNull URI getDefaultSkinUri(@NotNull String path) {
+        HttpServer http = server;
+        String host = "127.0.0.1";
+        if (http != null && !http.getAddress().getAddress().isAnyLocalAddress()) {
+            host = http.getAddress().getAddress().getHostAddress();
+            if (host.contains(":")) host = "[" + host + "]";
+        }
+        return URI.create("http://" + host + ":" + getPort() + "/bettermodel-skins/" + path);
+    }
+
     public static byte @Nullable [] getZipBytes() {
-        return zipBytes;
+        CompiledPack current = compiledPack;
+        return current != null ? current.bytes() : null;
     }
 
     public static @Nullable String getSha1Hash() {
-        return sha1Hash;
+        CompiledPack current = compiledPack;
+        return current != null ? current.hash() : null;
     }
 
     public static @Nullable UUID getPackId() {
-        return packId;
+        CompiledPack current = compiledPack;
+        return current != null ? current.id() : null;
     }
 
     private static @NotNull String calculateSha1(byte[] data) {
@@ -212,6 +237,44 @@ public final class BetterModelPackServer {
             return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-1 algorithm not available", e);
+        }
+    }
+
+    private record CompiledPack(byte[] bytes, String hash, UUID id) {
+    }
+
+    private static class DefaultSkinHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                String method = exchange.getRequestMethod();
+                if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
+                    exchange.sendResponseHeaders(405, -1);
+                    return;
+                }
+                String path = exchange.getRequestURI().getPath().substring("/bettermodel-skins/".length());
+                if (!path.matches("(slim|wide)/(alex|ari|efe|kai|makena|noor|steve|sunny|zuri)\\.png")) {
+                    exchange.sendResponseHeaders(404, -1);
+                    return;
+                }
+                try (var input = BetterModelPackServer.class.getResourceAsStream("/bettermodel/default-skins/" + path)) {
+                    if (input == null) {
+                        exchange.sendResponseHeaders(404, -1);
+                        return;
+                    }
+                    byte[] bytes = input.readAllBytes();
+                    exchange.getResponseHeaders().set("Content-Type", "image/png");
+                    exchange.getResponseHeaders().set("Content-Length", String.valueOf(bytes.length));
+                    if ("HEAD".equalsIgnoreCase(method)) {
+                        exchange.sendResponseHeaders(200, -1);
+                        return;
+                    }
+                    exchange.sendResponseHeaders(200, bytes.length);
+                    exchange.getResponseBody().write(bytes);
+                }
+            } finally {
+                exchange.close();
+            }
         }
     }
 
@@ -225,10 +288,9 @@ public final class BetterModelPackServer {
                 return;
             }
 
-            byte[] currentPack = zipBytes;
-            String currentHash = sha1Hash;
+            CompiledPack current = compiledPack;
 
-            if (currentPack == null || currentHash == null) {
+            if (current == null) {
                 byte[] msg = "Resource pack not ready yet.".getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
                 exchange.sendResponseHeaders(503, msg.length);
@@ -239,9 +301,10 @@ public final class BetterModelPackServer {
                 return;
             }
 
+            byte[] currentPack = current.bytes();
             exchange.getResponseHeaders().set("Content-Type", "application/zip");
             exchange.getResponseHeaders().set("Content-Length", String.valueOf(currentPack.length));
-            exchange.getResponseHeaders().set("ETag", "\"" + currentHash + "\"");
+            exchange.getResponseHeaders().set("ETag", "\"" + current.hash() + "\"");
 
             if ("HEAD".equalsIgnoreCase(method)) {
                 exchange.sendResponseHeaders(200, -1);

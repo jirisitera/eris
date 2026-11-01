@@ -43,22 +43,19 @@ public final class VoiceChatSecret {
         RANDOM.nextBytes(iv);
         Cipher cipher = Cipher.getInstance(CIPHER);
         cipher.init(Cipher.ENCRYPT_MODE, keySpec, new GCMParameterSpec(TAG_LEN_BITS, iv));
-        byte[] encrypted = cipher.doFinal(data);
-        byte[] payload = new byte[iv.length + encrypted.length];
+        byte[] payload = new byte[iv.length + cipher.getOutputSize(data.length)];
         System.arraycopy(iv, 0, payload, 0, iv.length);
-        System.arraycopy(encrypted, 0, payload, iv.length, encrypted.length);
+        cipher.doFinal(data, 0, data.length, payload, iv.length);
         return payload;
     }
 
     public byte[] decrypt(byte[] payload) throws GeneralSecurityException {
-        if (payload.length < IV_SIZE_BYTES) {
-            throw new GeneralSecurityException("Payload shorter than IV");
+        if (payload.length < IV_SIZE_BYTES + TAG_LEN_BITS / 8) {
+            throw new GeneralSecurityException("Payload shorter than IV and authentication tag");
         }
-        byte[] iv = Arrays.copyOfRange(payload, 0, IV_SIZE_BYTES);
-        byte[] data = Arrays.copyOfRange(payload, IV_SIZE_BYTES, payload.length);
         Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, new GCMParameterSpec(TAG_LEN_BITS, iv));
-        return cipher.doFinal(data);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, new GCMParameterSpec(TAG_LEN_BITS, payload, 0, IV_SIZE_BYTES));
+        return cipher.doFinal(payload, IV_SIZE_BYTES, payload.length - IV_SIZE_BYTES);
     }
 
     @Override

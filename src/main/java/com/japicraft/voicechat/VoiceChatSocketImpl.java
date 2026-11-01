@@ -8,10 +8,14 @@ import java.util.Arrays;
 
 public final class VoiceChatSocketImpl implements VoicechatSocket {
     private final byte[] buffer = new byte[4096];
-    private DatagramSocket socket;
+    private volatile DatagramSocket socket;
+    private boolean closed;
 
     @Override
-    public void open(int port, String bindAddress) throws Exception {
+    public synchronized void open(int port, String bindAddress) throws Exception {
+        if (closed) {
+            throw new IllegalStateException("Socket already closed");
+        }
         if (socket != null) {
             throw new IllegalStateException("Socket already opened");
         }
@@ -68,7 +72,8 @@ public final class VoiceChatSocketImpl implements VoicechatSocket {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        closed = true;
         if (socket != null) {
             try {
                 socket.close();

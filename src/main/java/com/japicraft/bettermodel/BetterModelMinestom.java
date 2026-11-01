@@ -17,9 +17,6 @@ public final class BetterModelMinestom {
     private static @Nullable MinestomBetterModel platform;
     private static boolean started;
 
-    private BetterModelMinestom() {
-    }
-
     public static synchronized void register() {
         if (started) {
             throw new IllegalStateException("BetterModel can only be started once per JVM.");
@@ -40,7 +37,6 @@ public final class BetterModelMinestom {
             case BetterModelPlatform.ReloadResult.Success success -> {
                 int total = BetterModel.models().size() + BetterModel.limbs().size();
                 log.info("BetterModel {} loaded {} models in {} ms", modelPlatform.semver(), total, success.totalTime());
-                BetterModelPackServer.update(success.packResult());
             }
             case BetterModelPlatform.ReloadResult.Failure(Throwable throwable) ->
                 log.error("BetterModel failed to load its models", throwable);
@@ -58,13 +54,5 @@ public final class BetterModelMinestom {
         }
         platform = null;
         running.disable();
-    }
-
-    public static @NotNull BetterModelPlatform platform() {
-        MinestomBetterModel running = platform;
-        if (running == null) {
-            throw new IllegalStateException("BetterModelMinestom.register() has not been called.");
-        }
-        return running;
     }
 }

@@ -51,10 +51,10 @@ vec3 sampleBloomHighlight(vec2 uv) {
 
     // Check emissive parity marker: R odd, G even, B odd
     bool isEmissive =
-        (rgb255.r & 1) == 1 &&
-        (rgb255.g & 1) == 0 &&
-        (rgb255.b & 1) == 1 &&
-        maxChannel > 0.2;
+    (rgb255.r & 1) == 1 &&
+    (rgb255.g & 1) == 0 &&
+    (rgb255.b & 1) == 1 &&
+    maxChannel > 0.2;
 
     if (isEmissive) {
         return color;

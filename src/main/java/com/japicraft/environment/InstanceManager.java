@@ -7,35 +7,80 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.LightingChunk;
 
-public class InstanceManager {
-    public static final Pos INITIAL_SPAWN = new Pos(0.5, 10.5, 0.5, 0.0F, 0.0F);
-    public static final Pos MAIN_SPAWN = new Pos(8.5, 11.0, 4.5, 0.0F, 0.0F);
+import java.util.*;
 
-    public static InstanceContainer create(Player player) {
-        InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer();
+public class InstanceManager {
+    public static final Pos MAIN_SPAWN = new Pos(8.5, 11.0, 4.5, 0.0F, 0.0F);
+    public static final Pos[] SPAWNS = {
+        MAIN_SPAWN,
+        MAIN_SPAWN,
+        MAIN_SPAWN
+    };
+    private static final int MAX_INSTANCE_PLAYERS = 3;
+    private final Map<UUID, Instance> playerToInstance = new HashMap<>();
+    private final Map<Instance, Set<UUID>> instanceToPlayer = new LinkedHashMap<>();
+
+    private Instance getNewInstance() {
+        Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer();
         instance.setChunkSupplier(LightingChunk::new);
-        // generate main structure
+
         StructureLoader.loadBlocks(Eris.class.getClassLoader(), "office.nbt", instance);
         StructureLoader.loadEntities(instance);
+
         return instance;
     }
 
-    public static void remove(Player player) {
-        Instance instance = player.getInstance();
+    public synchronized void removeInstance(Instance instance) {
+        Set<UUID> players = instanceToPlayer.get(instance);
+        if (players != null && !players.isEmpty()) {
+            return;
+        }
+        instanceToPlayer.remove(instance);
         MinecraftServer.getSchedulerManager().scheduleNextTick(() -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
     }
 
-    public static void register() {
-        MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> {
-            Player player = event.getPlayer();
+    public synchronized Instance getPlayerInstance(Player player) {
+        UUID playerId = player.getUuid();
+        Instance existingInstance = playerToInstance.get(playerId);
+        if (existingInstance != null) {
+            return existingInstance;
+        }
 
-            event.setSpawningInstance(InstanceManager.create(player));
-            player.setRespawnPoint(InstanceManager.INITIAL_SPAWN);
-        });
+        Instance instance = instanceToPlayer.entrySet().stream()
+            .filter(entry -> entry.getValue().size() < MAX_INSTANCE_PLAYERS)
+            .map(Map.Entry::getKey)
+            .findFirst()
+            .orElseGet(this::getNewInstance);
 
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> InstanceManager.remove(event.getPlayer()));
+        playerToInstance.put(playerId, instance);
+
+        Set<UUID> uuids = instanceToPlayer.getOrDefault(instance, new HashSet<>());
+
+        player.setRespawnPoint(InstanceManager.SPAWNS[uuids.size()]);
+
+        uuids.add(playerId);
+        instanceToPlayer.put(instance, uuids);
+
+        return instance;
+    }
+
+    public synchronized void removePlayer(Player player) {
+        Instance instance = playerToInstance.remove(player.getUuid());
+        if (instance == null) {
+            return;
+        }
+
+        Set<UUID> players = instanceToPlayer.get(instance);
+        players.remove(player.getUuid());
+        if (players.isEmpty()) {
+            removeInstance(instance);
+        }
+    }
+
+    public void register() {
+        MinecraftServer.getGlobalEventHandler().addListener(AsyncPlayerConfigurationEvent.class, event -> event.setSpawningInstance(getPlayerInstance(event.getPlayer())));
+        MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> removePlayer(event.getPlayer()));
     }
 }

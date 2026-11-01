@@ -35,9 +35,21 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
         ModelProfileInfo info = new ModelProfileInfo(player.getUuid(), player.getUsername());
         PlayerSkin skin = player.getSkin();
         if (skin == null) {
-            return ModelProfile.of(info, ModelProfileSkin.EMPTY);
+            return new UnresolvedProfile(info);
         }
         return ModelProfile.of(info, ProfileManagerImpl.INSTANCE.skin(skin.textures()));
+    }
+
+    private record UnresolvedProfile(ModelProfileInfo info) implements ModelProfile {
+        @Override
+        public @NotNull ModelProfileSkin skin() {
+            return MinestomProfileSupplier.defaultProfile(info).skin();
+        }
+
+        @Override
+        public @NotNull Uncompleted asUncompleted() {
+            return ProfileManagerImpl.INSTANCE.supplier().supply(info);
+        }
     }
 
     private static float wrapDegrees(float degrees) {

@@ -104,9 +104,7 @@ public final class MinestomNMS implements NMS {
         if (target instanceof LivingEntity living) {
             boolean hideEquipment = registry.hideOption(channel.uuid()).equipment();
             EntityEquipmentPacket packet = Packets.equipmentPacket(living, slot -> hideEquipment ? ItemStack.AIR : living.getEquipment(slot));
-            if (packet != null) {
-                bundler.add(packet);
-            }
+            bundler.add(packet);
         }
         bundler.send(MinestomAdapter.player(channel.player()));
     }

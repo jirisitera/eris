@@ -2,6 +2,7 @@ package com.japicraft.environment;
 
 import com.japicraft.bettermodel.MinestomAdapter;
 import com.japicraft.bettermodel.impl.MinestomScheduler;
+import com.japicraft.bettermodel.impl.MinestomPlayerModels;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.AnimationIterator;
 import kr.toxicity.model.api.animation.AnimationModifier;
@@ -43,10 +44,6 @@ public class AnimationManager {
         return (r << 16) | (TIMER_TAG_G << 8) | clampedSeconds;
     }
 
-    public static int encodeTimer(int minutes, int seconds) {
-        return encodeTimer(minutes, seconds, 0);
-    }
-
     private static void syncTimerDisplay(@NotNull Entity entity) {
         EntityTracker tracker = resolveTracker(entity);
         if (tracker == null) {
@@ -80,10 +77,9 @@ public class AnimationManager {
         return Optional.ofNullable(entity.getTag(TIMER_STRIKES_TAG)).orElse(0);
     }
 
-    public static int addStrike(@NotNull Entity entity) {
+    public static void addStrike(@NotNull Entity entity) {
         int next = Math.clamp(getStrikes(entity) + 1, 0, 3);
         setStrikes(entity, next);
-        return next;
     }
 
     public static void startTimer(@NotNull Entity entity, int minutes, int seconds, @Nullable Runnable onComplete) {
@@ -111,6 +107,7 @@ public class AnimationManager {
         }).delay(TaskSchedule.tick(20)).repeat(TaskSchedule.tick(20)).schedule();
         entity.setTag(TIMER_TASK_TAG, task);
     }
+
     public static void stopTimer(@NotNull Entity entity) {
         Task existing = entity.getTag(TIMER_TASK_TAG);
         if (existing != null) {
@@ -118,6 +115,7 @@ public class AnimationManager {
             entity.removeTag(TIMER_TASK_TAG);
         }
     }
+
     private static @Nullable EntityTracker resolveTracker(@NotNull Entity entity) {
         EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
         if (registry != null) {
@@ -131,7 +129,7 @@ public class AnimationManager {
             }
         }
         Optional<ModelRenderer> optModel = BetterModel.model(AnimationManager.DEFAULT_TIMER_MODEL);
-        return optModel.map(modelRenderer -> modelRenderer.getOrCreate(
+        return optModel.map(modelRenderer -> MinestomPlayerModels.getOrCreate(modelRenderer,
             MinestomAdapter.adapt(entity),
             TrackerModifier.DEFAULT,
             created -> created.hideOption(EntityHideOption.DEFAULT)
@@ -150,7 +148,7 @@ public class AnimationManager {
 
         ModelRenderer selectedModel = optModel.get();
 
-        EntityTracker tracker = selectedModel.getOrCreate(
+        EntityTracker tracker = MinestomPlayerModels.getOrCreate(selectedModel,
             MinestomAdapter.adapt(entity),
             TrackerModifier.DEFAULT,
             created -> created.hideOption(EntityHideOption.DEFAULT)
@@ -186,12 +184,10 @@ public class AnimationManager {
         }
 
         // Re-use or obtain tracker WITHOUT closing the registry
-        EntityTracker tracker = selectedModel.getOrCreate(
+        EntityTracker tracker = MinestomPlayerModels.getOrCreate(selectedModel,
             MinestomAdapter.adapt(entity),
             TrackerModifier.DEFAULT,
-            created -> {
-                created.hideOption(EntityHideOption.DEFAULT);
-            }
+            created -> created.hideOption(EntityHideOption.DEFAULT)
         );
 
         Optional<BlueprintAnimation> idleOpt = selectedModel.animation("idle");

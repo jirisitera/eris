@@ -26,7 +26,7 @@ public final class Eris {
     public static CommandSender CONSOLE;
 
     void main() {
-        MinecraftServer server = MinecraftServer.init(new Auth.Online());
+        MinecraftServer server = MinecraftServer.init(new Auth.Offline());
 
         prepareEnvironment();
         applyGlobalProperties();
@@ -72,14 +72,14 @@ public final class Eris {
         PlayerUpdateManager.register();
         PlayerInputManager.register();
 
-        InstanceManager.register();
+        new InstanceManager().register();
         ServerListManager.register();
         //GlobalResourcePack.register();
 
         BetterModelMinestom.register();
-        LOGGER.atInfo().log(Component.text("Loaded BetterModel."));
+        LOGGER.atInfo().log(Component.text("Loaded BetterModel integration."));
 
         VoiceChatManager.register();
-        LOGGER.atInfo().log(Component.text("Loaded Simple Voice Chat."));
+        LOGGER.atInfo().log(Component.text("Loaded Simple Voice Chat integration."));
     }
 }

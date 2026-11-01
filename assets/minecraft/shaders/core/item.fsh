@@ -85,8 +85,8 @@ void main() {
         int strikes = clamp(int(round(meshLocal.z)), 0, 3);
         bool storesEven = ((int(gl_FragCoord.x) + int(gl_FragCoord.y)) & 1) == 0;
         int encoded = storesEven
-            ? ((int(round(screenUv.x * 1023.0)) << 6) | (seconds & 63))
-            : ((int(round(screenUv.y * 255.0)) << 8) | ((strikes & 3) << 6) | (minutes & 63));
+        ? ((int(round(screenUv.x * 1023.0)) << 6) | (seconds & 63))
+        : ((int(round(screenUv.y * 255.0)) << 8) | ((strikes & 3) << 6) | (minutes & 63));
         fragColor = vec4(250.0, float(encoded >> 8), float(encoded & 255), 255.0) / 255.0;
         return;
         #endif
