@@ -8,4 +8,5 @@ public class PostEffect {
     public static final Key TIMER = Key.key(Eris.NAMESPACE, "timer");
     public static final Key CURSOR = Key.key(Eris.NAMESPACE, "cursor");
     public static final Key BLINDNESS = Key.key(Eris.NAMESPACE, "blindness");
+    public static final Key LOADING = Key.key(Eris.NAMESPACE, "loading");
 }

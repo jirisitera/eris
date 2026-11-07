@@ -2,6 +2,7 @@ package com.japicraft.camera;
 
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.environment.PlayerRole;
+import com.japicraft.environment.GameStageManager;
 import com.japicraft.environment.StructureLoader;
 import com.japicraft.service.ActionBarService;
 import net.kyori.adventure.text.Component;
@@ -47,7 +48,7 @@ public final class BombView {
     }
 
     public static void enter(Player player) {
-        if (isActive(player) || PlayerRole.get(player) != PlayerRole.BOMB_DEFUSER
+        if (!GameStageManager.isGame(player) || isActive(player) || PlayerRole.get(player) != PlayerRole.BOMB_DEFUSER
             || !CameraAnchor.isAttached(player) || player.getInstance() == null) return;
         if (!player.hasTag(STATE)) attach(player);
         State state = player.getTag(STATE);
@@ -55,7 +56,6 @@ public final class BombView {
         state.active = true;
         // Switch logical cursors and shader mode together, without resetting client rotation.
         ClientView.selectCursor(player, state.surfaceCursor);
-        showControls(player);
     }
 
     public static void exit(Player player) {
@@ -64,7 +64,6 @@ public final class BombView {
         state.surfaceCursor = ClientView.cursorPosition(player);
         state.active = false;
         ClientView.selectCursor(player, state.fullscreenCursor);
-        showControls(player);
     }
 
     /** Normalized surface coordinates, matching the constrained mouse range. */
@@ -76,14 +75,6 @@ public final class BombView {
 
     public static void update(Player player) {
         if (isActive(player) && PlayerRole.get(player) != PlayerRole.BOMB_DEFUSER) exit(player);
-    }
-
-    public static void showControls(Player player) {
-        PlayerRole role = PlayerRole.get(player);
-        if (role == null) return;
-        String controls = isActive(player) ? "S: lean back"
-            : role == PlayerRole.BOMB_DEFUSER ? "W: lean over bomb | F: emotes" : "F: emotes";
-        ActionBarService.setText(player, Component.text(role.displayName() + " | " + controls));
     }
 
     public static void detach(Player player) {

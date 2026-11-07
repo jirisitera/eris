@@ -34,8 +34,8 @@ public final class VoiceChatManager {
         CHANNEL_REQUEST_SECRET, CHANNEL_SECRET, CHANNEL_UPDATE_STATE,
         CHANNEL_STATE, CHANNEL_STATES, CHANNEL_REMOVE_STATE).getBytes(StandardCharsets.UTF_8);
 
-    private static final Component MUTED_ACTION_BAR = Component.text("You are muted", NamedTextColor.RED);
-    private static final Component DEAFENED_ACTION_BAR = Component.text("You are deafened", NamedTextColor.RED);
+    private static final Component MUTED_ACTION_BAR = Component.text("You are muted.", NamedTextColor.RED);
+    private static final Component DEAFENED_ACTION_BAR = Component.text("You are deafened.", NamedTextColor.RED);
 
     private static final Map<UUID, VoiceChatPlayerState> STATES = new ConcurrentHashMap<>();
     private static final Set<UUID> MUTED_PLAYERS = ConcurrentHashMap.newKeySet();
@@ -135,11 +135,10 @@ public final class VoiceChatManager {
             if (MUTED_PLAYERS.add(uuid) && server != null) {
                 server.flushSender(player);
             }
-            ActionBarService.setText(player, MUTED_ACTION_BAR);
         } else {
             MUTED_PLAYERS.remove(uuid);
-            ActionBarService.setText(player, Component.empty());
         }
+        refreshVoiceStatus(player);
     }
 
     public static boolean toggleMuted(Player player) {
@@ -162,11 +161,21 @@ public final class VoiceChatManager {
             if (DEAFENED_PLAYERS.add(uuid) && server != null) {
                 server.flushReceiver(player);
             }
-            ActionBarService.setText(player, DEAFENED_ACTION_BAR);
         } else {
             DEAFENED_PLAYERS.remove(uuid);
-            ActionBarService.setText(player, Component.empty());
         }
+        refreshVoiceStatus(player);
+    }
+
+    private static void refreshVoiceStatus(Player player) {
+        Component status = Component.empty();
+        if (isMuted(player)) status = MUTED_ACTION_BAR;
+        if (isDeafened(player)) {
+            status = isMuted(player)
+                ? status.append(Component.text(" | ", NamedTextColor.GRAY)).append(DEAFENED_ACTION_BAR)
+                : DEAFENED_ACTION_BAR;
+        }
+        ActionBarService.setText(player, status);
     }
 
     public static boolean toggleDeafened(Player player) {

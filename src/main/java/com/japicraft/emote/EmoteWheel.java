@@ -3,6 +3,7 @@ package com.japicraft.emote;
 import com.japicraft.camera.CursorProbe;
 import com.japicraft.camera.ClientView;
 import com.japicraft.camera.BombView;
+import com.japicraft.environment.GameStageManager;
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
 
@@ -38,7 +39,7 @@ public final class EmoteWheel {
     }
 
     public static void open(Player player) {
-        if (BombView.isActive(player) || isOpen(player)) {
+        if (!GameStageManager.isGame(player) || BombView.isActive(player) || isOpen(player)) {
             return;
         }
         ClientView.CursorPosition pending = player.getTag(RESTORE_TAG);

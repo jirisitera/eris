@@ -2,6 +2,7 @@ package com.japicraft.events;
 
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.BombView;
+import com.japicraft.environment.GameStageManager;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.server.Notification;
@@ -15,7 +16,7 @@ public final class PlayerInputManager {
     public static void register() {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerHandAnimationEvent.class, event -> {
             Player player = event.getPlayer();
-            if (BombView.isActive(player)) return;
+            if (!GameStageManager.isGame(player) || BombView.isActive(player)) return;
             int slice = EmoteWheel.hoveredSlice(player);
             if (EmoteWheel.isOpen(player) && slice >= 0) {
                 Notification.info(player, "Selected emote " + slice + ".");
@@ -29,6 +30,7 @@ public final class PlayerInputManager {
 
         MinecraftServer.getGlobalEventHandler().addListener(PlayerInputEvent.class, event -> {
             Player player = event.getPlayer();
+            if (!GameStageManager.isGame(player)) return;
             if (event.hasPressedBackwardKey()) {
                 BombView.exit(player);
             } else if (event.hasPressedForwardKey() && !event.isHoldingBackwardKey()) {
@@ -37,10 +39,14 @@ public final class PlayerInputManager {
             CameraAnchor.updateInput(player);
         });
 
-        // the cursor probe has to stay in the offhand; pressing swap offhand (F) toggles the emote wheel
+        // Keep the cursor probe in the offhand. F readies in the lobby and opens emotes in game.
         MinecraftServer.getGlobalEventHandler().addListener(PlayerSwapItemEvent.class, event -> {
             event.setCancelled(true);
-            EmoteWheel.toggle(event.getPlayer());
+            if (GameStageManager.isGame(event.getPlayer())) {
+                EmoteWheel.toggle(event.getPlayer());
+            } else {
+                GameStageManager.toggleReady(event.getPlayer());
+            }
         });
     }
 }

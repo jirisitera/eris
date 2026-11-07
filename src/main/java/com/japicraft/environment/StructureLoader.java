@@ -9,11 +9,14 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.timer.TaskSchedule;
+import net.minestom.server.tag.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public final class StructureLoader {
+    private static final Tag<Entity> CASE_ENTITY = Tag.Transient("caseEntity");
+    private static final Tag<Boolean> CASE_STARTED = Tag.Transient("caseStarted");
     public static final Pos WORLD_ORIGIN = InstanceManager.WORLD_ORIGIN;
     public static final Pos CASE_SPAWN = InstanceManager.DEFUSER_SPAWN.withYaw(180F).add(0, 1, 0.95);
 
@@ -38,17 +41,25 @@ public final class StructureLoader {
 
         AnimationManager.spawn(caseEntity, "case");
 
-        instance.scheduler().scheduleTask(() -> {
-            AnimationManager.setTimer(caseEntity, 5, 0);
+        instance.setTag(CASE_ENTITY, caseEntity);
+        AnimationManager.setTimer(caseEntity, 5, 0);
+    }
+
+    /** Called once on the lobby-to-game transition, never on a player's rejoin. */
+    public static void startGame(Instance instance) {
+        instance.scheduler().scheduleNextTick(() -> {
+            if (Boolean.TRUE.equals(instance.getTag(CASE_STARTED))) return;
+            Entity caseEntity = instance.getTag(CASE_ENTITY);
+            if (caseEntity == null || caseEntity.isRemoved()) return;
+            instance.setTag(CASE_STARTED, true);
+
             AnimationManager.play(caseEntity, "case", "open");
-        }, TaskSchedule.tick(100), TaskSchedule.stop());
+            AnimationManager.startTimer(caseEntity, 5, 0, null);
 
-        instance.scheduler().scheduleTask(() -> AnimationManager.startTimer(caseEntity, 5, 0, null), TaskSchedule.tick(200), TaskSchedule.stop());
-
-        instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(300), TaskSchedule.stop());
-
-        instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(400), TaskSchedule.stop());
-
-        instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(500), TaskSchedule.stop());
+            // Preserve the existing demonstration strikes, relative to countdown start.
+            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(100), TaskSchedule.stop());
+            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(200), TaskSchedule.stop());
+            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(300), TaskSchedule.stop());
+        });
     }
 }
