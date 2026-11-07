@@ -21,7 +21,7 @@ final class MinestomConfig implements BetterModelConfig {
     private final DebugConfig debug = DebugConfig.from(_ -> false);
     private final IndicatorConfig indicator = IndicatorConfig.from(_ -> false);
     private final ModuleConfig module = new ModuleConfig(true, true, false);
-    private final PackConfig pack = new PackConfig(false);
+    private final PackConfig pack = PackConfig.DEFAULT;
     private final Material itemMaterial = Material.LEATHER_HORSE_ARMOR;
     private final double maxSight = EntityUtil.renderDistance();
     private final BetterModelConfig.PackType packType = BetterModelConfig.PackType.NONE;

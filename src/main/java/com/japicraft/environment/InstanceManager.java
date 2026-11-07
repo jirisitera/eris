@@ -12,21 +12,32 @@ import net.minestom.server.instance.LightingChunk;
 import java.util.*;
 
 public class InstanceManager {
-    public static final Pos MAIN_SPAWN = new Pos(8.5, 11.0, 4.5, 0.0F, 0.0F);
-    public static final Pos[] SPAWNS = {
-        MAIN_SPAWN,
-        MAIN_SPAWN,
-        MAIN_SPAWN
-    };
+    public static final Pos WORLD_ORIGIN = new Pos(0.0, 100.0, 0.0);
+    public static final Pos DEFUSER_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 3.25);
+    public static final Pos HELPER_SPAWN = WORLD_ORIGIN.add(7.75, 1.0, 4.5).withYaw(90.0F);
+    public static final Pos EXPERT_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 7.75).withYaw(180.0F);
+    public static Pos spawnFor(PlayerRole role) {
+        return switch (role) {
+            case BOMB_DEFUSER -> DEFUSER_SPAWN;
+            case MANUAL_EXPERT -> EXPERT_SPAWN;
+            case DEFUSAL_HELPER -> HELPER_SPAWN;
+        };
+    }
+
+    public static Pos spawnFor(Player player) {
+        PlayerRole role = PlayerRole.get(player);
+        return role == null ? player.getRespawnPoint() : spawnFor(role);
+    }
     private static final int MAX_INSTANCE_PLAYERS = 3;
     private final Map<UUID, Instance> playerToInstance = new HashMap<>();
+    private final Map<UUID, PlayerRole> playerRoles = new HashMap<>();
     private final Map<Instance, Set<UUID>> instanceToPlayer = new LinkedHashMap<>();
 
     private Instance getNewInstance() {
         Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer();
         instance.setChunkSupplier(LightingChunk::new);
 
-        StructureLoader.loadBlocks(Eris.class.getClassLoader(), "office.nbt", instance);
+        StructureLoader.loadBlocks(Eris.class.getClassLoader(), "depot.nbt", instance);
         StructureLoader.loadEntities(instance);
 
         return instance;
@@ -58,7 +69,14 @@ public class InstanceManager {
 
         Set<UUID> uuids = instanceToPlayer.getOrDefault(instance, new HashSet<>());
 
-        player.setRespawnPoint(InstanceManager.SPAWNS[uuids.size()]);
+        Set<PlayerRole> usedRoles = EnumSet.noneOf(PlayerRole.class);
+        uuids.forEach(id -> usedRoles.add(playerRoles.get(id)));
+        PlayerRole role = Arrays.stream(PlayerRole.values())
+            .filter(candidate -> !usedRoles.contains(candidate))
+            .findFirst().orElseThrow();
+        playerRoles.put(playerId, role);
+        player.setTag(PlayerRole.TAG, role);
+        player.setRespawnPoint(spawnFor(role));
 
         uuids.add(playerId);
         instanceToPlayer.put(instance, uuids);
@@ -67,6 +85,8 @@ public class InstanceManager {
     }
 
     public synchronized void removePlayer(Player player) {
+        playerRoles.remove(player.getUuid());
+        player.removeTag(PlayerRole.TAG);
         Instance instance = playerToInstance.remove(player.getUuid());
         if (instance == null) {
             return;

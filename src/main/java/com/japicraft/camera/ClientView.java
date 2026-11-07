@@ -73,15 +73,17 @@ public final class ClientView {
 
         Float mouseYaw = player.getTag(MOUSE_YAW);
         Float mousePitch = player.getTag(MOUSE_PITCH);
+        float yawLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_YAW;
+        float pitchLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_PITCH;
         float nextMouseYaw = Math.clamp(
             (mouseYaw == null ? 0.0F : mouseYaw) + deltaYaw,
-            -MAX_CURSOR_YAW,
-            MAX_CURSOR_YAW
+            -yawLimit,
+            yawLimit
         );
         float nextMousePitch = Math.clamp(
             (mousePitch == null ? 0.0F : mousePitch) + deltaPitch,
-            -MAX_CURSOR_PITCH,
-            MAX_CURSOR_PITCH
+            -pitchLimit,
+            pitchLimit
         );
         player.setTag(MOUSE_YAW, nextMouseYaw);
         player.setTag(MOUSE_PITCH, nextMousePitch);
@@ -120,6 +122,13 @@ public final class ClientView {
 
     public static CursorPosition cursorPosition(Player player) {
         return new CursorPosition(mouseYaw(player), mousePitch(player));
+    }
+
+    /** Change the virtual cursor while retaining the raw mouse baseline used by the shader. */
+    public static void selectCursor(Player player, CursorPosition position) {
+        player.setTag(MOUSE_YAW, position.yaw());
+        player.setTag(MOUSE_PITCH, position.pitch());
+        CursorProbe.update(player);
     }
 
     public static void restoreCursor(Player player, CursorPosition position) {

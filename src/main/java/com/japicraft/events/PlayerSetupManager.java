@@ -1,12 +1,14 @@
 package com.japicraft.events;
 
 import com.japicraft.camera.CameraAnchor;
+import com.japicraft.camera.BombView;
 import com.japicraft.camera.CursorProbe;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.server.PostEffect;
 import com.japicraft.service.ActionBarService;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoadedEvent;
@@ -21,11 +23,17 @@ public final class PlayerSetupManager {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerSpawnEvent.class, event -> {
             Player player = event.getPlayer();
 
+            player.setGameMode(GameMode.ADVENTURE);
             player.sendPacket(new PostEffectsPacket(List.of(PostEffect.HUD)));
             player.setInvisible(true);
 
+            BombView.detach(player);
+            EmoteWheel.detach(player);
             CameraAnchor.attach(player);
+            BombView.attach(player);
             ActionBarService.schedule(player);
+            BombView.showControls(player);
+            player.scheduler().scheduleNextTick(() -> CameraAnchor.syncBodyMounts(player));
 
             player.scheduler().scheduleNextTick(() -> EmoteManager.play(player, "steve", "idle"));
         });
@@ -35,6 +43,7 @@ public final class PlayerSetupManager {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {
             Player player = event.getPlayer();
 
+            BombView.detach(player);
             CameraAnchor.detach(player);
             CursorProbe.detach(player);
             EmoteWheel.detach(player);

@@ -14,6 +14,8 @@ repositories {
 }
 
 dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
     // core
     implementation("net.minestom:minestom:26_3-SNAPSHOT")
     // Logging API for application code and runtime backend.
@@ -45,6 +47,9 @@ java {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
     jar {
         manifest {
             attributes["Main-Class"] = "com.japicraft.Eris"

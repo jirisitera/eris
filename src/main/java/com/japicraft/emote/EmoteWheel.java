@@ -2,6 +2,7 @@ package com.japicraft.emote;
 
 import com.japicraft.camera.CursorProbe;
 import com.japicraft.camera.ClientView;
+import com.japicraft.camera.BombView;
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
 
@@ -15,6 +16,7 @@ public final class EmoteWheel {
 
     // Returns 0..7 clockwise from top (12 o'clock), or -1 inside the center deadzone
     public static int hoveredSlice(Player player) {
+        if (BombView.isActive(player)) return -1;
         CursorProbe.ScreenPosition cursor = CursorProbe.screenPosition(player);
         float dx = (cursor.x() - 0.5F) * 2.0F * SCREEN_ASPECT_RATIO;
         float dy = (cursor.y() - 0.5F) * 2.0F;
@@ -28,7 +30,7 @@ public final class EmoteWheel {
     }
 
     public static boolean isOpen(Player player) {
-        return player.hasTag(OPEN_TAG);
+        return !BombView.isActive(player) && player.hasTag(OPEN_TAG);
     }
 
     public static boolean isTurningPaused(Player player) {
@@ -36,7 +38,7 @@ public final class EmoteWheel {
     }
 
     public static void open(Player player) {
-        if (isOpen(player)) {
+        if (BombView.isActive(player) || isOpen(player)) {
             return;
         }
         ClientView.CursorPosition pending = player.getTag(RESTORE_TAG);
@@ -80,5 +82,13 @@ public final class EmoteWheel {
         player.removeTag(OPEN_TAG);
         player.removeTag(CURSOR_TAG);
         player.removeTag(RESTORE_TAG);
+    }
+
+    public static ClientView.CursorPosition dismissForModeSwitch(Player player) {
+        ClientView.CursorPosition saved = player.getTag(CURSOR_TAG);
+        if (saved == null) saved = player.getTag(RESTORE_TAG);
+        if (saved == null) saved = ClientView.cursorPosition(player);
+        detach(player); // Also invalidates any scheduled wheel cursor restoration.
+        return saved;
     }
 }

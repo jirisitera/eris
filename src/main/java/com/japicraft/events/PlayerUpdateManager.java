@@ -1,6 +1,7 @@
 package com.japicraft.events;
 
 import com.japicraft.camera.CameraAnchor;
+import com.japicraft.camera.BombView;
 import com.japicraft.camera.ClientView;
 import com.japicraft.camera.CursorProbe;
 import net.minestom.server.MinecraftServer;
@@ -15,6 +16,7 @@ public final class PlayerUpdateManager {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerTickEvent.class, event -> {
             Player player = event.getPlayer();
             CameraAnchor.update(player);
+            BombView.update(player);
             CursorProbe.update(player);
         });
 
@@ -31,6 +33,7 @@ public final class PlayerUpdateManager {
                 return;
             }
             CameraAnchor.updateTarget(player);
+            BombView.update(player);
             CursorProbe.update(player);
         });
     }

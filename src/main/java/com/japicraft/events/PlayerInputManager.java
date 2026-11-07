@@ -1,6 +1,7 @@
 package com.japicraft.events;
 
 import com.japicraft.camera.CameraAnchor;
+import com.japicraft.camera.BombView;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.server.Notification;
@@ -14,6 +15,7 @@ public final class PlayerInputManager {
     public static void register() {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerHandAnimationEvent.class, event -> {
             Player player = event.getPlayer();
+            if (BombView.isActive(player)) return;
             int slice = EmoteWheel.hoveredSlice(player);
             if (EmoteWheel.isOpen(player) && slice >= 0) {
                 Notification.info(player, "Selected emote " + slice + ".");
@@ -27,6 +29,11 @@ public final class PlayerInputManager {
 
         MinecraftServer.getGlobalEventHandler().addListener(PlayerInputEvent.class, event -> {
             Player player = event.getPlayer();
+            if (event.hasPressedBackwardKey()) {
+                BombView.exit(player);
+            } else if (event.hasPressedForwardKey() && !event.isHoldingBackwardKey()) {
+                BombView.enter(player);
+            }
             CameraAnchor.updateInput(player);
         });
 

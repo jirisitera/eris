@@ -145,6 +145,41 @@ bool getLookAngles(out vec2 lookAngles) {
     return true;
 }
 
+vec2 surfaceCorner(int index) {
+    ivec3 a = ivec3(round(texelFetch(InSampler, ivec2(index * 2, 20), 0).rgb * 255.0));
+    ivec3 b = ivec3(round(texelFetch(InSampler, ivec2(index * 2 + 1, 20), 0).rgb * 255.0));
+    return vec2(a.r * 256 + a.g, a.b * 256 + b.r) / 65535.0 * 8.0 - 4.0;
+}
+
+vec4 surfaceCursor(vec2 screen) {
+    // Recover the world plane's projective mapping without painting a canvas into the scene.
+    for (int i = 0; i < 4; i++) {
+        ivec3 tag = ivec3(round(texelFetch(InSampler, ivec2(i * 2 + 1, 20), 0).rgb * 255.0));
+        if (tag.g != 91 || tag.b != 126) return vec4(0.0);
+    }
+    vec2 p0 = surfaceCorner(0), p1 = surfaceCorner(1);
+    vec2 p2 = surfaceCorner(2), p3 = surfaceCorner(3);
+    vec2 d1 = p1 - p2, d2 = p3 - p2, sum = p0 - p1 + p2 - p3;
+    float denominator = d1.x * d2.y - d2.x * d1.y;
+    if (abs(denominator) < 0.000001) return vec4(0.0);
+    float g = (sum.x * d2.y - d2.x * sum.y) / denominator;
+    float h = (d1.x * sum.y - sum.x * d1.y) / denominator;
+    mat3 projection = mat3(vec3(p1 - p0 + g * p1, g),
+                            vec3(p3 - p0 + h * p3, h), vec3(p0, 1.0));
+    if (abs(determinant(projection)) < 0.000001) return vec4(0.0);
+    vec3 local = inverse(projection) * vec3(screen, 1.0);
+    if (abs(local.z) < 0.000001) return vec4(0.0);
+    vec2 uv = local.xy / local.z;
+    if (any(lessThan(uv, vec2(0))) || any(greaterThan(uv, vec2(1)))) return vec4(0.0);
+    vec2 look;
+    if (!getLookAngles(look)) return vec4(0.0);
+    vec2 size = vec2(0.08 / 0.75, 0.08 / 0.5);
+    vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * (1.0 - size);
+    vec2 pixel = floor((uv - cursor) / size * 32.0);
+    if (any(lessThan(pixel, vec2(0))) || any(greaterThanEqual(pixel, vec2(32)))) return vec4(0.0);
+    return texelFetch(CursorSampler, ivec2(pixel), 0);
+}
+
 float bayerDither4x4(vec2 coord) {
     const int bayerMatrix[16] = int[](
         0, 8, 2, 10,
@@ -239,7 +274,12 @@ void main() {
 
     // Fullscreen overlays (emote wheel first, then cursor on top)
     vec2 lookAngles;
-    if (getLookAngles(lookAngles)) {
+    bool surfaceMode = round(texelFetch(InSampler, ivec2(6, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 254.5;
+    if (surfaceMode && getLookAngles(lookAngles)) {
+        vec4 cursor = surfaceCursor(texCoord * 2.0 - 1.0);
+        sceneColor = mix(sceneColor, cursor.rgb, cursor.a);
+    }
+    if (getLookAngles(lookAngles) && !surfaceMode) {
         float aspect = screenSize.x / screenSize.y;
         vec2 cursorNdc = clamp(lookAngles / 90.0, -1.0, 1.0);
 

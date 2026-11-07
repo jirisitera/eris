@@ -14,20 +14,17 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public final class StructureLoader {
-    public static final Pos CASE_SPAWN = InstanceManager.MAIN_SPAWN.withYaw(180F).add(0, 1, 0.95);
+    public static final Pos WORLD_ORIGIN = InstanceManager.WORLD_ORIGIN;
+    public static final Pos CASE_SPAWN = InstanceManager.DEFUSER_SPAWN.withYaw(180F).add(0, 1, 0.95);
 
     public static void loadBlocks(ClassLoader loader, String path, Instance instance) {
         instance.loadChunk(0, 0);
-        instance.loadChunk(1, 0);
-        instance.loadChunk(0, 1);
-        instance.loadChunk(1, 1);
         try (InputStream stream = loader.getResourceAsStream(path)) {
             if (stream == null) {
                 throw new RuntimeException("Could not find structure file in resources!");
             }
-            byte[] data = stream.readAllBytes();
-            Schematic structure = SchematicReader.structure().read(data);
-            structure.createBatch().apply(instance, 0, 10, 0, _ -> Eris.LOGGER.atInfo().log(Component.text("Loaded structure " + path + " into the primary instance.")));
+            Schematic structure = SchematicReader.structure().read(stream.readAllBytes());
+            structure.createBatch().apply(instance, WORLD_ORIGIN, _ -> Eris.LOGGER.atInfo().log(Component.text("Loaded structure " + path + " into the primary instance.")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
