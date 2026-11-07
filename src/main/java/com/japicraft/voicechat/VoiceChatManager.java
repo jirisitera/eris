@@ -7,10 +7,12 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerPluginMessageEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +30,9 @@ public final class VoiceChatManager {
     private static final String CHANNEL_STATE = MOD_ID + ":state";
     private static final String CHANNEL_STATES = MOD_ID + ":states";
     private static final String CHANNEL_REMOVE_STATE = MOD_ID + ":remove_state";
+    private static final byte[] REGISTERED_CHANNELS = String.join("\0",
+        CHANNEL_REQUEST_SECRET, CHANNEL_SECRET, CHANNEL_UPDATE_STATE,
+        CHANNEL_STATE, CHANNEL_STATES, CHANNEL_REMOVE_STATE).getBytes(StandardCharsets.UTF_8);
 
     private static final Component MUTED_ACTION_BAR = Component.text("You are muted", NamedTextColor.RED);
     private static final Component DEAFENED_ACTION_BAR = Component.text("You are deafened", NamedTextColor.RED);
@@ -57,7 +62,13 @@ public final class VoiceChatManager {
 
         GlobalEventHandler events = MinecraftServer.getGlobalEventHandler();
 
+        // NeoForge checks advertised payload channels before sending the initial secret request.
+        // Announce before entering the world, then refresh after each spawn/phase transition.
+        events.addListener(AsyncPlayerConfigurationEvent.class,
+            event -> advertiseChannels(event.getPlayer()));
+
         events.addListener(PlayerSpawnEvent.class, event -> {
+            advertiseChannels(event.getPlayer());
             if (!event.isFirstSpawn()) {
                 return;
             }
@@ -93,6 +104,11 @@ public final class VoiceChatManager {
                 }
             }
         });
+    }
+
+    private static void advertiseChannels(Player player) {
+        // minecraft:register is a NUL-separated UTF-8 list, without a string length prefix.
+        player.sendPluginMessage("minecraft:register", REGISTERED_CHANNELS);
     }
 
     public static synchronized void shutdown() {

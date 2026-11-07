@@ -10,6 +10,7 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.LightingChunk;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class InstanceManager {
     public static final Pos WORLD_ORIGIN = new Pos(0.0, 100.0, 0.0);
@@ -32,6 +33,7 @@ public class InstanceManager {
     private final Map<UUID, Instance> playerToInstance = new HashMap<>();
     private final Map<UUID, PlayerRole> playerRoles = new HashMap<>();
     private final Map<Instance, Set<UUID>> instanceToPlayer = new LinkedHashMap<>();
+    private final Map<UUID, Player> connectedPlayers = new HashMap<>();
 
     private Instance getNewInstance() {
         Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer();
@@ -45,10 +47,14 @@ public class InstanceManager {
 
     public synchronized void removeInstance(Instance instance) {
         Set<UUID> players = instanceToPlayer.get(instance);
-        if (players != null && !players.isEmpty()) {
+        if (players == null || players.stream().anyMatch(connectedPlayers::containsKey)) {
             return;
         }
         instanceToPlayer.remove(instance);
+        for (UUID uuid : players) {
+            playerToInstance.remove(uuid);
+            playerRoles.remove(uuid);
+        }
         MinecraftServer.getSchedulerManager().scheduleNextTick(() -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
     }
 
@@ -56,6 +62,13 @@ public class InstanceManager {
         UUID playerId = player.getUuid();
         Instance existingInstance = playerToInstance.get(playerId);
         if (existingInstance != null) {
+            Player existingPlayer = connectedPlayers.get(playerId);
+            if (existingPlayer != null && existingPlayer != player) {
+                throw new IllegalStateException("Player UUID already owns a connected seat: " + playerId);
+            }
+            connectedPlayers.put(playerId, player);
+            player.setTag(PlayerRole.TAG, playerRoles.get(playerId));
+            player.setRespawnPoint(spawnFor(playerRoles.get(playerId)));
             return existingInstance;
         }
 
@@ -66,6 +79,7 @@ public class InstanceManager {
             .orElseGet(this::getNewInstance);
 
         playerToInstance.put(playerId, instance);
+        connectedPlayers.put(playerId, player);
 
         Set<UUID> uuids = instanceToPlayer.getOrDefault(instance, new HashSet<>());
 
@@ -85,18 +99,16 @@ public class InstanceManager {
     }
 
     public synchronized void removePlayer(Player player) {
-        playerRoles.remove(player.getUuid());
-        player.removeTag(PlayerRole.TAG);
-        Instance instance = playerToInstance.remove(player.getUuid());
+        UUID uuid = player.getUuid();
+        // A rejected/stale connection must never release another connection's seat.
+        if (!connectedPlayers.remove(uuid, player)) {
+            return;
+        }
+        Instance instance = playerToInstance.get(uuid);
         if (instance == null) {
             return;
         }
-
-        Set<UUID> players = instanceToPlayer.get(instance);
-        players.remove(player.getUuid());
-        if (players.isEmpty()) {
-            removeInstance(instance);
-        }
+        removeInstance(instance);
     }
 
     public void register() {

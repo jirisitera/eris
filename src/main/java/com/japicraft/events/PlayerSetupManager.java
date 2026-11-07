@@ -5,6 +5,8 @@ import com.japicraft.camera.BombView;
 import com.japicraft.camera.CursorProbe;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
+import com.japicraft.environment.PlayerRole;
+import com.japicraft.voicechat.VoiceChatManager;
 import com.japicraft.server.PostEffect;
 import com.japicraft.service.ActionBarService;
 import net.minestom.server.MinecraftServer;
@@ -24,18 +26,33 @@ public final class PlayerSetupManager {
             Player player = event.getPlayer();
 
             player.setGameMode(GameMode.ADVENTURE);
-            player.sendPacket(new PostEffectsPacket(List.of(PostEffect.HUD)));
             player.setInvisible(true);
+
+            PlayerRole role = PlayerRole.get(player);
+            // Decode the timer, style the scene, apply role vision, then draw controls last.
+            player.sendPacket(new PostEffectsPacket(role == PlayerRole.BOMB_DEFUSER
+                ? List.of(PostEffect.TIMER, PostEffect.BLINDNESS, PostEffect.CURSOR)
+                : List.of(PostEffect.TIMER, PostEffect.HUD, PostEffect.CURSOR)));
+            if (role != null) {
+                VoiceChatManager.setMuted(player, role == PlayerRole.MANUAL_EXPERT);
+                VoiceChatManager.setDeafened(player, role == PlayerRole.DEFUSAL_HELPER);
+            }
 
             BombView.detach(player);
             EmoteWheel.detach(player);
             CameraAnchor.attach(player);
             BombView.attach(player);
+            CursorProbe.forceUpdate(player);
             ActionBarService.schedule(player);
             BombView.showControls(player);
             player.scheduler().scheduleNextTick(() -> CameraAnchor.syncBodyMounts(player));
 
-            player.scheduler().scheduleNextTick(() -> EmoteManager.play(player, "steve", "idle"));
+            player.scheduler().scheduleNextTick(() -> {
+                EmoteManager.play(player, "steve", "idle");
+                // Model/inventory setup can overwrite the initial slot update. Resend
+                // after setup even when the mouse hasn't changed (and the probe is cached).
+                CursorProbe.forceUpdate(player);
+            });
         });
         MinecraftServer.getGlobalEventHandler().addListener(PlayerLoadedEvent.class, event -> CursorProbe.forceUpdate(event.getPlayer()));
 

@@ -24,7 +24,7 @@ public final class StructureLoader {
                 throw new RuntimeException("Could not find structure file in resources!");
             }
             Schematic structure = SchematicReader.structure().read(stream.readAllBytes());
-            structure.createBatch().apply(instance, WORLD_ORIGIN, _ -> Eris.LOGGER.atInfo().log(Component.text("Loaded structure " + path + " into the primary instance.")));
+            structure.createBatch().apply(instance, WORLD_ORIGIN, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

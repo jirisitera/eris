@@ -78,7 +78,7 @@
         },
         {
             "vertex_shader": "minecraft:core/screenquad",
-            "fragment_shader": "eris:post/cursor",
+            "fragment_shader": "eris:post/hud",
             "inputs": [
                 {
                     "sampler_name": "In",
@@ -87,20 +87,6 @@
                 {
                     "sampler_name": "Bloom",
                     "target": "bloom",
-                    "bilinear": true
-                },
-                {
-                    "sampler_name": "Cursor",
-                    "location": "eris:cursor",
-                    "width": 32,
-                    "height": 32,
-                    "bilinear": false
-                },
-                {
-                    "sampler_name": "Font",
-                    "location": "eris:font",
-                    "width": 512,
-                    "height": 256,
                     "bilinear": true
                 },
                 {
