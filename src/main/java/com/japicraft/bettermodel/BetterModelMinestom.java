@@ -4,7 +4,6 @@ import com.japicraft.bettermodel.impl.MinestomBetterModel;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.BetterModelPlatform;
 import net.minestom.server.MinecraftServer;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

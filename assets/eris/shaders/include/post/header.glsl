@@ -11,8 +11,8 @@ uniform sampler2D InSampler;
 layout(location = 0) in vec2 texCoord;
 
 layout(std140) uniform SamplerInfo {
-  vec2 OutSize;
-  vec2 InSize;
+    vec2 OutSize;
+    vec2 InSize;
 };
 
 layout(location = 0) out vec4 fragColor;

@@ -124,7 +124,9 @@ public final class ClientView {
         return new CursorPosition(mouseYaw(player), mousePitch(player));
     }
 
-    /** Change the virtual cursor while retaining the raw mouse baseline used by the shader. */
+    /**
+     * Change the virtual cursor while retaining the raw mouse baseline used by the shader.
+     */
     public static void selectCursor(Player player, CursorPosition position) {
         player.setTag(MOUSE_YAW, position.yaw());
         player.setTag(MOUSE_PITCH, position.pitch());

@@ -1,8 +1,10 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
+// @formatter:off
 #include <eris:emote_wheel.glsl>
 #include <eris:ui_data.glsl>
+// @formatter:on
 
 uniform sampler2D InSampler;
 uniform sampler2D CursorSampler;
@@ -13,6 +15,8 @@ layout(location = 0) out vec4 fragColor;
 const int PLAYER_LOOK_ROW_Y = 16;
 const int CURSOR_PROBE_ROW_Y = 19;
 const ivec3 ACTIVE_MARKER = ivec3(91, 126, 209);
+// Screen-height fraction: stays circular at every aspect ratio and follows the cursor tip.
+const float SURFACE_REVEAL_RADIUS = 0.12;
 
 vec2 decodeAngles(ivec2 pixel0, ivec2 pixel1, float yawRange, float pitchRange) {
     ivec3 color0 = ivec3(round(texelFetch(InSampler, pixel0, 0).rgb * 255.0));
@@ -52,7 +56,9 @@ vec2 surfaceCorner(int index) {
     return vec2(a.r * 256 + a.g, a.b * 256 + b.r) / 65535.0 * 8.0 - 4.0;
 }
 
-vec4 surfaceCursor(vec2 screen) {
+vec4 surfaceCursor(vec2 screen, vec2 look, out float visibility) {
+    // Pixels outside the projected canvas leave the scene untouched.
+    visibility = 1.0;
     // Recover the world plane's projective mapping without painting a canvas into the scene.
     for (int i = 0; i < 4; i++) {
         ivec3 tag = ivec3(round(texelFetch(InSampler, ivec2(i * 2 + 1, 20), 0).rgb * 255.0));
@@ -66,16 +72,22 @@ vec4 surfaceCursor(vec2 screen) {
     float g = (sum.x * d2.y - d2.x * sum.y) / denominator;
     float h = (d1.x * sum.y - sum.x * d1.y) / denominator;
     mat3 projection = mat3(vec3(p1 - p0 + g * p1, g),
-                            vec3(p3 - p0 + h * p3, h), vec3(p0, 1.0));
+        vec3(p3 - p0 + h * p3, h), vec3(p0, 1.0));
     if (abs(determinant(projection)) < 0.000001) return vec4(0.0);
+
+    vec2 size = vec2(0.08 / 0.75, 0.08 / 0.5);
+    vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * (1.0 - size);
+    vec3 projectedCursor = projection * vec3(cursor, 1.0);
+    if (abs(projectedCursor.z) < 0.000001) return vec4(0.0);
+    vec2 viewport = vec2(textureSize(InSampler, 0));
+    vec2 offsetPixels = (screen - projectedCursor.xy / projectedCursor.z) * viewport * 0.5;
+    float radiusPixels = SURFACE_REVEAL_RADIUS * viewport.y;
+
     vec3 local = inverse(projection) * vec3(screen, 1.0);
     if (abs(local.z) < 0.000001) return vec4(0.0);
     vec2 uv = local.xy / local.z;
     if (any(lessThan(uv, vec2(0))) || any(greaterThan(uv, vec2(1)))) return vec4(0.0);
-    vec2 look;
-    if (!getLookAngles(look)) return vec4(0.0);
-    vec2 size = vec2(0.08 / 0.75, 0.08 / 0.5);
-    vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * (1.0 - size);
+    visibility = 1.0 - smoothstep(radiusPixels - 1.0, radiusPixels + 1.0, length(offsetPixels));
     vec2 pixel = floor((uv - cursor) / size * 32.0);
     if (any(lessThan(pixel, vec2(0))) || any(greaterThanEqual(pixel, vec2(32)))) return vec4(0.0);
     return texelFetch(CursorSampler, ivec2(pixel), 0);
@@ -88,9 +100,14 @@ void main() {
     // Fullscreen overlays (emote wheel first, then cursor on top)
     vec2 lookAngles;
     bool surfaceMode = round(texelFetch(InSampler, ivec2(6, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 254.5;
-    if (surfaceMode && getLookAngles(lookAngles)) {
-        vec4 cursor = surfaceCursor(texCoord * 2.0 - 1.0);
-        sceneColor = mix(sceneColor, cursor.rgb, cursor.a);
+    if (surfaceMode) {
+        float visibility = 1.0;
+        vec4 cursor = vec4(0.0);
+        if (getLookAngles(lookAngles)) {
+            cursor = surfaceCursor(texCoord * 2.0 - 1.0, lookAngles, visibility);
+        }
+        // Cover only the surface canvas, with a circular opening onto the existing scene.
+        sceneColor = mix(sceneColor * visibility, cursor.rgb, cursor.a);
     }
     if (getLookAngles(lookAngles) && !surfaceMode) {
         float aspect = screenSize.x / screenSize.y;

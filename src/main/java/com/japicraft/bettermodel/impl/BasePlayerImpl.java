@@ -1,8 +1,8 @@
 package com.japicraft.bettermodel.impl;
 
 import com.japicraft.bettermodel.MinestomPlayer;
-import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.BombView;
+import com.japicraft.camera.CameraAnchor;
 import com.japicraft.emote.EmoteManager;
 import kr.toxicity.model.api.armor.PlayerArmor;
 import kr.toxicity.model.api.entity.BasePlayer;
@@ -39,18 +39,6 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
             return new UnresolvedProfile(info);
         }
         return ModelProfile.of(info, ProfileManagerImpl.INSTANCE.skin(skin.textures()));
-    }
-
-    private record UnresolvedProfile(ModelProfileInfo info) implements ModelProfile {
-        @Override
-        public @NotNull ModelProfileSkin skin() {
-            return MinestomProfileSupplier.defaultProfile(info).skin();
-        }
-
-        @Override
-        public @NotNull Uncompleted asUncompleted() {
-            return ProfileManagerImpl.INSTANCE.supplier().supply(info);
-        }
     }
 
     private static float wrapDegrees(float degrees) {
@@ -140,5 +128,17 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
     @Override
     public @NotNull PlayerSkinParts skinParts() {
         return new PlayerSkinParts(this.player.getSettings().displayedSkinParts() & 0xFF);
+    }
+
+    private record UnresolvedProfile(ModelProfileInfo info) implements ModelProfile {
+        @Override
+        public @NotNull ModelProfileSkin skin() {
+            return MinestomProfileSupplier.defaultProfile(info).skin();
+        }
+
+        @Override
+        public @NotNull Uncompleted asUncompleted() {
+            return ProfileManagerImpl.INSTANCE.supplier().supply(info);
+        }
     }
 }

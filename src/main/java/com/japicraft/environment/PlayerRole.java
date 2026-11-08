@@ -15,11 +15,11 @@ public enum PlayerRole {
         this.displayName = displayName;
     }
 
-    public String displayName() {
-        return displayName;
-    }
-
     public static PlayerRole get(Player player) {
         return player.getTag(TAG);
+    }
+
+    public String displayName() {
+        return displayName;
     }
 }

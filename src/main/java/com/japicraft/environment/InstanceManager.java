@@ -1,6 +1,7 @@
 package com.japicraft.environment;
 
 import com.japicraft.Eris;
+import com.japicraft.bomb.BombModules;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -10,13 +11,18 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.LightingChunk;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 public class InstanceManager {
     public static final Pos WORLD_ORIGIN = new Pos(0.0, 100.0, 0.0);
-    public static final Pos DEFUSER_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 3.25);
-    public static final Pos HELPER_SPAWN = WORLD_ORIGIN.add(7.75, 1.0, 4.5).withYaw(90.0F);
-    public static final Pos EXPERT_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 7.75).withYaw(180.0F);
+    public static final Pos DEFUSER_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 2.85);
+    public static final Pos HELPER_SPAWN = WORLD_ORIGIN.add(8.15, 1.0, 4.5).withYaw(90.0F);
+    public static final Pos EXPERT_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 8.15).withYaw(180.0F);
+    private static final int MAX_INSTANCE_PLAYERS = 3;
+    private final Map<UUID, Instance> playerToInstance = new HashMap<>();
+    private final Map<UUID, PlayerRole> playerRoles = new HashMap<>();
+    private final Map<Instance, Set<UUID>> instanceToPlayer = new LinkedHashMap<>();
+    private final Map<UUID, Player> connectedPlayers = new HashMap<>();
+
     public static Pos spawnFor(PlayerRole role) {
         return switch (role) {
             case BOMB_DEFUSER -> DEFUSER_SPAWN;
@@ -29,11 +35,6 @@ public class InstanceManager {
         PlayerRole role = PlayerRole.get(player);
         return role == null ? player.getRespawnPoint() : spawnFor(role);
     }
-    private static final int MAX_INSTANCE_PLAYERS = 3;
-    private final Map<UUID, Instance> playerToInstance = new HashMap<>();
-    private final Map<UUID, PlayerRole> playerRoles = new HashMap<>();
-    private final Map<Instance, Set<UUID>> instanceToPlayer = new LinkedHashMap<>();
-    private final Map<UUID, Player> connectedPlayers = new HashMap<>();
 
     private Instance getNewInstance() {
         Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer();
@@ -55,7 +56,11 @@ public class InstanceManager {
             playerToInstance.remove(uuid);
             playerRoles.remove(uuid);
         }
-        MinecraftServer.getSchedulerManager().scheduleNextTick(() -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
+        MinecraftServer.getSchedulerManager().scheduleNextTick(() -> {
+            BombModules bomb = BombModules.get(instance);
+            if (bomb != null) bomb.close();
+            MinecraftServer.getInstanceManager().unregisterInstance(instance);
+        });
     }
 
     public synchronized Instance getPlayerInstance(Player player) {

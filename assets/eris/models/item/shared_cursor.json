@@ -1,0 +1,17 @@
+{
+	"format_version": "26.3",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"particle": "eris:item/shared_cursor",
+		"cursor": "eris:item/shared_cursor"
+	},
+	"elements": [
+		{
+			"from": [7, 8, 7],
+			"to": [15, 8, 15],
+			"faces": {
+				"up": {"uv": [0, 0, 16, 16], "texture": "#cursor"}
+			}
+		}
+	]
+}

@@ -1,0 +1,13 @@
+{
+    "model": {
+        "type": "minecraft:model",
+        "model": "eris:item/module_button",
+        "tints": [
+            {
+                "type": "minecraft:custom_model_data",
+                "index": 0,
+                "default": 12071474
+            }
+        ]
+    }
+}

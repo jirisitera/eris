@@ -19,7 +19,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-/** Builds player models with vanilla skin parts while their actual skin loads. */
+/**
+ * Builds player models with vanilla skin parts while their actual skin loads.
+ */
 public final class MinestomPlayerModels {
     private static volatile SkinData[] defaults = new SkinData[0];
 

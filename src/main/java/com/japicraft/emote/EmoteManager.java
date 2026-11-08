@@ -1,8 +1,8 @@
 package com.japicraft.emote;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import com.japicraft.bettermodel.impl.MinestomScheduler;
 import com.japicraft.bettermodel.impl.MinestomPlayerModels;
+import com.japicraft.bettermodel.impl.MinestomScheduler;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.environment.AnimationManager;
 import kr.toxicity.model.api.BetterModel;

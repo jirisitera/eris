@@ -205,7 +205,9 @@ public final class BetterModelPackServer {
         return Integer.getInteger(PORT_PROPERTY, DEFAULT_PORT);
     }
 
-    /** Local URL for BetterModel's server-side texture reader. */
+    /**
+     * Local URL for BetterModel's server-side texture reader.
+     */
     public static @NotNull URI getDefaultSkinUri(@NotNull String path) {
         HttpServer http = server;
         String host = "127.0.0.1";

@@ -1,24 +1,22 @@
 package com.japicraft.environment;
 
-import com.japicraft.Eris;
+import com.japicraft.bomb.BombModules;
 import net.hollowcube.schem.Schematic;
 import net.hollowcube.schem.reader.SchematicReader;
-import net.kyori.adventure.text.Component;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.tag.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public final class StructureLoader {
+    public static final Pos WORLD_ORIGIN = InstanceManager.WORLD_ORIGIN;
+    public static final Pos CASE_SPAWN = InstanceManager.DEFUSER_SPAWN.withYaw(180F).add(0, 1, 1.25);
     private static final Tag<Entity> CASE_ENTITY = Tag.Transient("caseEntity");
     private static final Tag<Boolean> CASE_STARTED = Tag.Transient("caseStarted");
-    public static final Pos WORLD_ORIGIN = InstanceManager.WORLD_ORIGIN;
-    public static final Pos CASE_SPAWN = InstanceManager.DEFUSER_SPAWN.withYaw(180F).add(0, 1, 0.95);
 
     public static void loadBlocks(ClassLoader loader, String path, Instance instance) {
         instance.loadChunk(0, 0);
@@ -45,7 +43,9 @@ public final class StructureLoader {
         AnimationManager.setTimer(caseEntity, 5, 0);
     }
 
-    /** Called once on the lobby-to-game transition, never on a player's rejoin. */
+    /**
+     * Called once on the lobby-to-game transition, never on a player's rejoin.
+     */
     public static void startGame(Instance instance) {
         instance.scheduler().scheduleNextTick(() -> {
             if (Boolean.TRUE.equals(instance.getTag(CASE_STARTED))) return;
@@ -55,11 +55,7 @@ public final class StructureLoader {
 
             AnimationManager.play(caseEntity, "case", "open");
             AnimationManager.startTimer(caseEntity, 5, 0, null);
-
-            // Preserve the existing demonstration strikes, relative to countdown start.
-            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(100), TaskSchedule.stop());
-            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(200), TaskSchedule.stop());
-            instance.scheduler().scheduleTask(() -> AnimationManager.addStrike(caseEntity), TaskSchedule.tick(300), TaskSchedule.stop());
+            BombModules.create(instance, () -> AnimationManager.addStrike(caseEntity));
         });
     }
 }

@@ -1,8 +1,8 @@
 package com.japicraft.environment;
 
 import com.japicraft.bettermodel.MinestomAdapter;
-import com.japicraft.bettermodel.impl.MinestomScheduler;
 import com.japicraft.bettermodel.impl.MinestomPlayerModels;
+import com.japicraft.bettermodel.impl.MinestomScheduler;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.AnimationIterator;
 import kr.toxicity.model.api.animation.AnimationModifier;

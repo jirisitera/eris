@@ -83,8 +83,8 @@ void main() {
         vec2 screen = projected.xy / projected.w;
         ivec2 encodedScreen = ivec2(round(clamp((screen + 4.0) / 8.0, 0.0, 1.0) * 65535.0));
         ivec3 data = (vertexTag.r & 1) == 0
-            ? ivec3(encodedScreen.x >> 8, encodedScreen.x & 255, encodedScreen.y >> 8)
-            : ivec3(encodedScreen.y & 255, 91, 126);
+        ? ivec3(encodedScreen.x >> 8, encodedScreen.x & 255, encodedScreen.y >> 8)
+        : ivec3(encodedScreen.y & 255, 91, 126);
         meshLocal = vec3(data) / 255.0;
         vec2 corner = QUAD_UVS[3 - gl_VertexIndex % 4];
         gl_Position = vec4((vec2(float(vertexTag.r), 20.0) + corner) / ScreenSize * 2.0 - 1.0, 0.999, 1.0);

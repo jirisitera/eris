@@ -1,7 +1,9 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
+// @formatter:off
 #include <eris:ui_data.glsl>
+// @formatter:on
 
 uniform sampler2D InSampler;
 uniform sampler2D DepthSampler;
@@ -47,12 +49,12 @@ vec3 visibleSignal(vec3 color) {
     float lowBlue = 1.0 - smoothstep(0.18, 0.24, blueRatio);
     float redMask = (1.0 - smoothstep(0.22, 0.28, greenRatio)) * lowBlue;
     float yellowMask = smoothstep(0.78, 0.88, greenRatio)
-        * (1.0 - smoothstep(1.05, 1.12, greenRatio))
-        * smoothstep(0.75, 0.90, color.g) * lowBlue;
+    * (1.0 - smoothstep(1.05, 1.12, greenRatio))
+    * smoothstep(0.75, 0.90, color.g) * lowBlue;
     float brightness = smoothstep(0.85, 0.97, color.r);
     // Output only canonical red/yellow, never the rest of the scene's palette.
     return vec3(1.0, 0.0, 0.0) * redMask * brightness
-        + vec3(1.0, 1.0, 0.0) * yellowMask * brightness;
+    + vec3(1.0, 1.0, 0.0) * yellowMask * brightness;
 }
 
 void main() {
@@ -73,7 +75,7 @@ void main() {
     // Retain crisp texture/panel outlines too: depth alone cannot show flat digits.
     float light = lightAt(pixel, size);
     float contrast = max(max(abs(lightAt(pixel - dx, size) - light), abs(lightAt(pixel + dx, size) - light)),
-                         max(abs(lightAt(pixel - dy, size) - light), abs(lightAt(pixel + dy, size) - light)));
+        max(abs(lightAt(pixel - dy, size) - light), abs(lightAt(pixel + dy, size) - light)));
     float detail = smoothstep(0.10, 0.18, contrast);
     vec3 outline = vec3(max(shape * SHAPE_BRIGHTNESS, detail * DETAIL_BRIGHTNESS));
     vec3 signal = visibleSignal(sceneAt(pixel, size));

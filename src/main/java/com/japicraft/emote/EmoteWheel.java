@@ -1,8 +1,8 @@
 package com.japicraft.emote;
 
-import com.japicraft.camera.CursorProbe;
-import com.japicraft.camera.ClientView;
 import com.japicraft.camera.BombView;
+import com.japicraft.camera.ClientView;
+import com.japicraft.camera.CursorProbe;
 import com.japicraft.environment.GameStageManager;
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;

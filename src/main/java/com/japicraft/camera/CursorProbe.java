@@ -7,9 +7,9 @@ import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.network.packet.server.play.BundlePacket;
 import net.minestom.server.network.packet.server.play.PlayerRotationPacket;
+import net.minestom.server.network.packet.server.play.SetSlotPacket;
 import net.minestom.server.tag.Tag;
 
 import java.util.List;

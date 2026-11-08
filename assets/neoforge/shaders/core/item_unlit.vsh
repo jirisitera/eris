@@ -2,4 +2,6 @@
 #extension GL_ARB_separate_shader_objects : require
 
 #define ERIS_UNLIT
+// @formatter:off
 #include <eris:item_vertex.glsl>
+// @formatter:on

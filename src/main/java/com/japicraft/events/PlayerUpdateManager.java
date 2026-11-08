@@ -1,7 +1,7 @@
 package com.japicraft.events;
 
-import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.BombView;
+import com.japicraft.camera.CameraAnchor;
 import com.japicraft.camera.ClientView;
 import com.japicraft.camera.CursorProbe;
 import net.minestom.server.MinecraftServer;

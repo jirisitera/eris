@@ -1,11 +1,11 @@
 package com.japicraft.bettermodel.impl;
 
-import com.japicraft.bettermodel.BetterModelPackServer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.japicraft.bettermodel.BetterModelPackServer;
 import kr.toxicity.model.api.profile.ModelProfile;
 import kr.toxicity.model.api.profile.ModelProfileInfo;
 import kr.toxicity.model.api.profile.ModelProfileSkin;
@@ -44,6 +44,17 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
 
     private static @NotNull UUID undashed(@NotNull String id) {
         return UUID.fromString(id.replaceFirst("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
+    }
+
+    static @NotNull ModelProfile defaultProfile(@NotNull ModelProfileInfo info) {
+        int index = Math.floorMod(info.id().hashCode(), DEFAULT_SKINS.length * 2);
+        boolean slim = index < DEFAULT_SKINS.length;
+        String path = (slim ? "slim/" : "wide/") + DEFAULT_SKINS[index % DEFAULT_SKINS.length] + ".png";
+        String url = BetterModelPackServer.getDefaultSkinUri(path).toString();
+        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + url
+            + "\",\"metadata\":{\"model\":\"" + (slim ? "slim" : "default") + "\"}}}}";
+        String raw = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        return ModelProfile.of(info, new ModelProfileSkin(URI.create(url), null, slim, raw));
     }
 
     @Override
@@ -96,17 +107,6 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
             // Keep the server identity: offline-mode UUIDs differ from Mojang account UUIDs.
             return ModelProfile.of(info, skin);
         });
-    }
-
-    static @NotNull ModelProfile defaultProfile(@NotNull ModelProfileInfo info) {
-        int index = Math.floorMod(info.id().hashCode(), DEFAULT_SKINS.length * 2);
-        boolean slim = index < DEFAULT_SKINS.length;
-        String path = (slim ? "slim/" : "wide/") + DEFAULT_SKINS[index % DEFAULT_SKINS.length] + ".png";
-        String url = BetterModelPackServer.getDefaultSkinUri(path).toString();
-        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + url
-            + "\",\"metadata\":{\"model\":\"" + (slim ? "slim" : "default") + "\"}}}}";
-        String raw = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-        return ModelProfile.of(info, new ModelProfileSkin(URI.create(url), null, slim, raw));
     }
 
     private @NotNull CompletableFuture<JsonElement> get(@NotNull String url) {

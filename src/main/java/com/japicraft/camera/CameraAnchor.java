@@ -1,8 +1,11 @@
 package com.japicraft.camera;
 
-import com.japicraft.emote.EmoteWheel;
 import com.japicraft.emote.EmoteManager;
+import com.japicraft.emote.EmoteWheel;
 import com.japicraft.environment.InstanceManager;
+import com.japicraft.environment.GameStageManager;
+import com.japicraft.environment.PlayerRole;
+import com.japicraft.environment.StructureLoader;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
@@ -17,12 +20,14 @@ import net.minestom.server.tag.Tag;
 import java.util.Objects;
 
 public final class CameraAnchor {
-    // camera rotation when the fullscreen cursor reaches the screen edge
-    public static final float MAX_YAW_OFFSET = 90.0f;
-    public static final float MAX_PITCH_OFFSET = 90.0f;
+    public static final float MAX_YAW_OFFSET = 60.0f;
+    public static final float MAX_PITCH_OFFSET = 60.0f;
     public static final float MOVE_SPEED = 20.0f;
     public static final float ARRIVAL_FACTOR = 0.50f;
     public static final float CAMERA_HEIGHT = 1.65f;
+    // Helper watches the work surface from the right-hand side of the case.
+    public static final Pos HELPER_LEAN_POSITION = StructureLoader.CASE_SPAWN.add(0.65, 1.0, 0)
+        .withView(90.0F, 52.4F);
     private static final double CAMERA_BACK_OFFSET = 0;
     private static final Tag<Entity> anchor = Tag.Transient("cameraAnchor");
     private static final Tag<Entity> bodyAnchor = Tag.Transient("bodyAnchor");
@@ -33,18 +38,45 @@ public final class CameraAnchor {
         return player.hasTag(anchor);
     }
 
+    public static void enterLean(Player player) {
+        if (PlayerRole.get(player) == PlayerRole.BOMB_DEFUSER) {
+            BombView.enter(player);
+            return;
+        }
+        View current = player.getTag(view);
+        if (current == null || current.helperLeaning || player.getInstance() == null
+            || !GameStageManager.isGame(player) || PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER) return;
+        current.helperLeaning = true;
+        ClientView.selectCursor(player, EmoteWheel.dismissForModeSwitch(player));
+    }
+
+    public static void exitLean(Player player) {
+        BombView.exit(player);
+        View current = player.getTag(view);
+        if (current != null) current.helperLeaning = false;
+    }
+
+    private static Pos leanPosition(Player player, View current) {
+        if (BombView.isActive(player)) return BombView.CAMERA_POSITION;
+        return current.helperLeaning ? HELPER_LEAN_POSITION : null;
+    }
+
     private static boolean canSendCamera(Player player) {
         return player.isOnline()
             && player.getPlayerConnection().getServerState() == ConnectionState.PLAY
             && player.getPlayerConnection().getClientState() == ConnectionState.PLAY;
     }
 
-    /** Stationary body mount; the model's existing vertical offset places its feet at the role spawn. */
+    /**
+     * Stationary body mount; the model's existing vertical offset places its feet at the role spawn.
+     */
     public static Pos bodyPosition(Player player) {
         return InstanceManager.spawnFor(player).add(0, CAMERA_HEIGHT, 0);
     }
 
-    /** Eye position behind the role spawn, with the offset rotated into that role's facing direction. */
+    /**
+     * Eye position behind the role spawn, with the offset rotated into that role's facing direction.
+     */
     public static Pos homePosition(Player player) {
         Pos spawn = InstanceManager.spawnFor(player);
         double yaw = Math.toRadians(spawn.yaw());
@@ -67,7 +99,9 @@ public final class CameraAnchor {
         return Objects.requireNonNullElse(display, player).getPosition().pitch();
     }
 
-    /** Replay body mounts after the joining viewer has received both vehicles and players. */
+    /**
+     * Replay body mounts after the joining viewer has received both vehicles and players.
+     */
     public static void syncBodyMounts(Player viewer) {
         if (viewer.getInstance() == null) return;
         for (Player player : viewer.getInstance().getPlayers()) {
@@ -133,9 +167,12 @@ public final class CameraAnchor {
             return;
         }
 
-        if (BombView.isActive(player)) {
-            view.targetYawOffset = unwrapDelta(BombView.CAMERA_POSITION.yaw() - baseYaw(player));
-            view.targetPitch = BombView.CAMERA_POSITION.pitch();
+        if (view.helperLeaning && (PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER
+            || !GameStageManager.isGame(player))) view.helperLeaning = false;
+        Pos leaning = leanPosition(player, view);
+        if (leaning != null) {
+            view.targetYawOffset = unwrapDelta(leaning.yaw() - baseYaw(player));
+            view.targetPitch = leaning.pitch();
             return;
         }
 
@@ -161,7 +198,8 @@ public final class CameraAnchor {
         float deltaYaw = view.targetYawOffset - view.yawOffset;
         float deltaPitch = view.targetPitch - view.pitch;
         float distance = (float) Math.hypot(deltaYaw, deltaPitch);
-        Pos targetPosition = BombView.isActive(player) ? BombView.CAMERA_POSITION : homePosition(player);
+        Pos leaning = leanPosition(player, view);
+        Pos targetPosition = leaning != null ? leaning : homePosition(player);
         Pos currentPosition = anchor.getPosition();
         double positionDistance = currentPosition.distance(targetPosition);
         if (distance < 0.001f && positionDistance < 0.001) {
@@ -232,6 +270,7 @@ public final class CameraAnchor {
     }
 
     private static final class View {
+        private boolean helperLeaning;
         private float yawOffset;
         private float pitch;
         private float targetYawOffset;

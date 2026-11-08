@@ -1,8 +1,10 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
+// @formatter:off
 #include <eris:timer.glsl>
 #include <eris:ui_data.glsl>
+// @formatter:on
 
 uniform sampler2D InSampler;
 uniform sampler2D FontSampler;

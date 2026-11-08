@@ -1,8 +1,7 @@
 package com.japicraft.environment;
 
-import com.japicraft.camera.BombView;
-import com.japicraft.service.ActionBarService;
 import com.japicraft.server.PostEffect;
+import com.japicraft.service.ActionBarService;
 import com.japicraft.voicechat.VoiceChatManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -10,20 +9,15 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.common.PostEffectsPacket;
-import net.minestom.server.tag.Tag;
 import net.minestom.server.scoreboard.Sidebar;
+import net.minestom.server.tag.Tag;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-/** Lobby state lives on the instance, so reconnects retain an ongoing game. */
+/**
+ * Lobby state lives on the instance, so reconnects retain an ongoing game.
+ */
 public final class GameStageManager {
-    public enum Stage { LOBBY, GAME }
-
     private static final int REQUIRED_PLAYERS = 3;
     private static final Tag<State> STATE = Tag.Transient("gameStage");
 
@@ -134,10 +128,13 @@ public final class GameStageManager {
             if (newSidebar) sidebar.addViewer(player);
         }
     }
+
+    public enum Stage {LOBBY, GAME}
+
     private static final class State {
-        Stage stage = Stage.LOBBY;
         final Map<UUID, Player> players = new HashMap<>();
         final Map<UUID, Sidebar> sidebars = new HashMap<>();
         final Set<UUID> ready = new HashSet<>();
+        Stage stage = Stage.LOBBY;
     }
 }
