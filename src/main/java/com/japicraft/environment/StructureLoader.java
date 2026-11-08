@@ -15,6 +15,7 @@ import java.io.InputStream;
 public final class StructureLoader {
     public static final Pos WORLD_ORIGIN = InstanceManager.WORLD_ORIGIN;
     public static final Pos CASE_SPAWN = InstanceManager.DEFUSER_SPAWN.withYaw(180F).add(0, 1, 1.25);
+    public static final Pos MANUAL_SPAWN = InstanceManager.EXPERT_SPAWN.withYaw(90F).add(0, 1, -1.25);
     private static final Tag<Entity> CASE_ENTITY = Tag.Transient("caseEntity");
     private static final Tag<Boolean> CASE_STARTED = Tag.Transient("caseStarted");
 
@@ -41,6 +42,11 @@ public final class StructureLoader {
 
         instance.setTag(CASE_ENTITY, caseEntity);
         AnimationManager.setTimer(caseEntity, 5, 0);
+
+        Entity manualEntity = new Entity(EntityType.ITEM_DISPLAY);
+        manualEntity.setNoGravity(true);
+        manualEntity.setInstance(instance, MANUAL_SPAWN);
+        AnimationManager.spawn(manualEntity, "manual");
     }
 
     /**

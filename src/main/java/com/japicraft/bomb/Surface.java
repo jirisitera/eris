@@ -10,14 +10,11 @@ import net.minestom.server.coordinate.Pos;
 public final class Surface {
     public static final double WIDTH = 0.75, DEPTH = 0.5, CURSOR_SIZE = 0.08;
 
-    private Surface() {
-    }
-
     /**
      * Mouse position denotes the cursor texture's top-left corner, exactly as in the shader.
      */
     public static Point cursor(double x, double y) {
-        return new Point(Math.clamp(x, 0, 1) * (1 - CURSOR_SIZE / WIDTH),
+        return new Point(Math.clamp(x, 0, 1) * (1 - CURSOR_SIZE / WIDTH * 2 / 32),
             Math.clamp(y, 0, 1) * (1 - CURSOR_SIZE / DEPTH));
     }
 

@@ -71,6 +71,7 @@ public final class GameStageManager {
     }
 
     private static void applyStage(Player player, Stage stage) {
+        removeSidebar(state(player.getInstance()), player);
         boolean playing = stage == Stage.GAME;
         PlayerRole role = PlayerRole.get(player);
 
@@ -100,8 +101,13 @@ public final class GameStageManager {
 
     private static void refresh(State state) {
         for (Player player : state.players.values()) {
-            if (state.stage != Stage.LOBBY) {
-                removeSidebar(state, player);
+            if (state.stage == Stage.GAME) {
+                if (!state.sidebars.containsKey(player.getUuid())) {
+                    Sidebar sidebar = createGameSidebar(PlayerRole.get(player));
+                    state.sidebars.put(player.getUuid(), sidebar);
+                    ActionBarService.setText(player, Component.empty());
+                    sidebar.addViewer(player);
+                }
                 continue;
             }
             Sidebar sidebar = state.sidebars.get(player.getUuid());
@@ -127,6 +133,44 @@ public final class GameStageManager {
                     .decoration(TextDecoration.BOLD, false)));
             if (newSidebar) sidebar.addViewer(player);
         }
+    }
+
+    private static Sidebar createGameSidebar(PlayerRole role) {
+        Sidebar sidebar = new Sidebar(Component.text("Eris", NamedTextColor.GOLD, TextDecoration.BOLD)
+            .append(Component.text(" | Controls", NamedTextColor.YELLOW).decoration(TextDecoration.BOLD, false)));
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.empty());
+        lines.add(Component.text(role == null ? "Unassigned" : role.displayName(), NamedTextColor.AQUA));
+        lines.add(Component.empty());
+        lines.add(control("Mouse", "look around / aim"));
+        if (role != null) {
+            lines.add(control("W", switch (role) {
+                case BOMB_DEFUSER -> "inspect bomb";
+                case MANUAL_EXPERT -> "read manual";
+                case DEFUSAL_HELPER -> "lean over bomb";
+            }));
+            lines.add(control("S", "lean back"));
+            if (role == PlayerRole.BOMB_DEFUSER) {
+                lines.add(control("Left click", "press bomb button"));
+            }
+        }
+        lines.add(Component.empty());
+        lines.add(control("F", "toggle emote wheel"));
+        lines.add(control("Left click", "select emote"));
+        if (role == PlayerRole.BOMB_DEFUSER) {
+            lines.add(Component.text("Emotes: lean back first", NamedTextColor.GRAY));
+        }
+        lines.add(Component.empty());
+        for (int i = 0; i < lines.size(); i++) {
+            sidebar.createLine(new Sidebar.ScoreboardLine("control-" + i, lines.get(i),
+                lines.size() - i, Sidebar.NumberFormat.blank()));
+        }
+        return sidebar;
+    }
+
+    private static Component control(String key, String action) {
+        return Component.text(key, NamedTextColor.YELLOW, TextDecoration.BOLD)
+            .append(Component.text(": " + action, NamedTextColor.WHITE).decoration(TextDecoration.BOLD, false));
     }
 
     public enum Stage {LOBBY, GAME}

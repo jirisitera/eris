@@ -26,8 +26,9 @@ public final class CameraAnchor {
     public static final float ARRIVAL_FACTOR = 0.50f;
     public static final float CAMERA_HEIGHT = 1.65f;
     // Helper watches the work surface from the right-hand side of the case.
-    public static final Pos HELPER_LEAN_POSITION = StructureLoader.CASE_SPAWN.add(0.65, 1.0, 0)
-        .withView(90.0F, 52.4F);
+    public static final Pos HELPER_LEAN_POSITION = StructureLoader.CASE_SPAWN.add(0.65, 1.0, 0).withView(90.0F, 52.5F);
+    // Expert reads the manual from their side of the table.
+    public static final Pos EXPERT_LEAN_POSITION = StructureLoader.MANUAL_SPAWN.add(0, 1.0, 0.45).withView(180.0F, 45F);
     private static final double CAMERA_BACK_OFFSET = 0;
     private static final Tag<Entity> anchor = Tag.Transient("cameraAnchor");
     private static final Tag<Entity> bodyAnchor = Tag.Transient("bodyAnchor");
@@ -44,21 +45,23 @@ public final class CameraAnchor {
             return;
         }
         View current = player.getTag(view);
-        if (current == null || current.helperLeaning || player.getInstance() == null
-            || !GameStageManager.isGame(player) || PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER) return;
-        current.helperLeaning = true;
+        if (current == null || current.roleLeaning || player.getInstance() == null
+            || !GameStageManager.isGame(player) || (PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER
+                && PlayerRole.get(player) != PlayerRole.MANUAL_EXPERT)) return;
+        current.roleLeaning = true;
         ClientView.selectCursor(player, EmoteWheel.dismissForModeSwitch(player));
     }
 
     public static void exitLean(Player player) {
         BombView.exit(player);
         View current = player.getTag(view);
-        if (current != null) current.helperLeaning = false;
+        if (current != null) current.roleLeaning = false;
     }
 
     private static Pos leanPosition(Player player, View current) {
         if (BombView.isActive(player)) return BombView.CAMERA_POSITION;
-        return current.helperLeaning ? HELPER_LEAN_POSITION : null;
+        if (!current.roleLeaning) return null;
+        return PlayerRole.get(player) == PlayerRole.MANUAL_EXPERT ? EXPERT_LEAN_POSITION : HELPER_LEAN_POSITION;
     }
 
     private static boolean canSendCamera(Player player) {
@@ -167,8 +170,9 @@ public final class CameraAnchor {
             return;
         }
 
-        if (view.helperLeaning && (PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER
-            || !GameStageManager.isGame(player))) view.helperLeaning = false;
+        if (view.roleLeaning && ((PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER
+            && PlayerRole.get(player) != PlayerRole.MANUAL_EXPERT)
+            || !GameStageManager.isGame(player))) view.roleLeaning = false;
         Pos leaning = leanPosition(player, view);
         if (leaning != null) {
             view.targetYawOffset = unwrapDelta(leaning.yaw() - baseYaw(player));
@@ -270,7 +274,7 @@ public final class CameraAnchor {
     }
 
     private static final class View {
-        private boolean helperLeaning;
+        private boolean roleLeaning;
         private float yawOffset;
         private float pitch;
         private float targetYawOffset;

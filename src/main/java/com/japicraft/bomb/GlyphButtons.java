@@ -31,7 +31,7 @@ public final class GlyphButtons implements BombModule {
         this.context = context;
         sequence = new ButtonSequence(definition.order());
         for (int i = 0; i < 4; i++) {
-            Surface.Rect rect = context.rect(0.07 + (i % 2) * 0.5, 0.07 + (i / 2) * 0.5, 0.36, 0.36);
+            Surface.Rect rect = context.rect(0.025 + (i % 2) * 0.5, 0.025 + (i / 2) * 0.5, 0.45, 0.45);
             bounds.add(rect);
             buttons.add(context.button(rect, RED));
             shown[i] = RED;

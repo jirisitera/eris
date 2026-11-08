@@ -15,7 +15,7 @@ layout(location = 0) out vec4 fragColor;
 const int PLAYER_LOOK_ROW_Y = 16;
 const int CURSOR_PROBE_ROW_Y = 19;
 const ivec3 ACTIVE_MARKER = ivec3(91, 126, 209);
-// Screen-height fraction: stays circular at every aspect ratio and follows the cursor tip.
+// Radius in world blocks on the bomb surface, independent of FOV and resolution.
 const float SURFACE_REVEAL_RADIUS = 0.12;
 
 vec2 decodeAngles(ivec2 pixel0, ivec2 pixel1, float yawRange, float pitchRange) {
@@ -76,18 +76,19 @@ vec4 surfaceCursor(vec2 screen, vec2 look, out float visibility) {
     if (abs(determinant(projection)) < 0.000001) return vec4(0.0);
 
     vec2 size = vec2(0.08 / 0.75, 0.08 / 0.5);
-    vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * (1.0 - size);
-    vec3 projectedCursor = projection * vec3(cursor, 1.0);
-    if (abs(projectedCursor.z) < 0.000001) return vec4(0.0);
-    vec2 viewport = vec2(textureSize(InSampler, 0));
-    vec2 offsetPixels = (screen - projectedCursor.xy / projectedCursor.z) * viewport * 0.5;
-    float radiusPixels = SURFACE_REVEAL_RADIUS * viewport.y;
-
+    // Match Surface.cursor: stop two cursor-texture pixels short of the right edge.
+    vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * vec2(1.0 - size.x * 2.0 / 32.0, 1.0 - size.y);
     vec3 local = inverse(projection) * vec3(screen, 1.0);
     if (abs(local.z) < 0.000001) return vec4(0.0);
     vec2 uv = local.xy / local.z;
-    if (any(lessThan(uv, vec2(0))) || any(greaterThan(uv, vec2(1)))) return vec4(0.0);
-    visibility = 1.0 - smoothstep(radiusPixels - 1.0, radiusPixels + 1.0, length(offsetPixels));
+    float surfaceDistance = length((uv - cursor) * vec2(0.75, 0.5));
+    float edgeWidth = max(fwidth(surfaceDistance), 0.000001);
+    // Extend the dark canvas around the surface, with less padding at the bottom.
+    vec2 padding = vec2(0.0455 / 0.75, 0.085 / 0.5);
+    vec2 bottomRightPadding = vec2(padding.x, -0.026 / 0.5);
+    if (any(lessThan(uv, -padding)) || any(greaterThan(uv, vec2(1) + bottomRightPadding))) return vec4(0.0);
+    visibility = 1.0 - smoothstep(SURFACE_REVEAL_RADIUS - edgeWidth,
+        SURFACE_REVEAL_RADIUS + edgeWidth, surfaceDistance);
     vec2 pixel = floor((uv - cursor) / size * 32.0);
     if (any(lessThan(pixel, vec2(0))) || any(greaterThanEqual(pixel, vec2(32)))) return vec4(0.0);
     return texelFetch(CursorSampler, ivec2(pixel), 0);

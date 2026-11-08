@@ -22,7 +22,8 @@ vec3 sampleBloomHighlight(vec2 uv) {
         return texture(InSampler, uv).rgb;
     }
 
-    ivec2 pixelCoord = ivec2(uv * vec2(textureSize(InSampler, 0)));
+    ivec2 imageSize = textureSize(InSampler, 0);
+    ivec2 pixelCoord = clamp(ivec2(uv * vec2(imageSize)), ivec2(0), imageSize - 1);
 
     // Exclude UI data rows (reserved for CPU-GPU metadata communication) from bloom
     if (pixelCoord.y >= 14 && pixelCoord.y <= 21 && pixelCoord.x < 48) {
@@ -33,7 +34,6 @@ vec3 sampleBloomHighlight(vec2 uv) {
     ivec3 rgb255 = ivec3(round(color * 255.0));
     float maxChannel = max(color.r, max(color.g, color.b));
     float minChannel = min(color.r, min(color.g, color.b));
-    bool isWhiteSurface = (maxChannel - minChannel) < 0.2 * maxChannel;
 
     // Case timer screen LED glow (red channel 250)
     if (rgb255.r == 250) {
@@ -49,23 +49,12 @@ vec3 sampleBloomHighlight(vec2 uv) {
         return vec3(0.55, 0.40, 0.08) * glow;
     }
 
-    // Check emissive parity marker: R odd, G even, B odd
-    bool isEmissive =
-    (rgb255.r & 1) == 1 &&
-    (rgb255.g & 1) == 0 &&
-    (rgb255.b & 1) == 1 &&
-    maxChannel > 0.2;
-
-    if (isEmissive) {
-        return color;
-    }
-
-    if (isWhiteSurface) {
-        float bloomWeight = smoothstep(0.55, 0.85, maxChannel);
-        return color * bloomWeight;
-    }
-
-    return vec3(0.0);
+    // Smooth thresholds avoid flashes when ordinary shaded colors cross RGB parity
+    // or the neutral-color boundary. Timer emission is handled explicitly above.
+    float neutrality = 1.0 - smoothstep(0.15, 0.25,
+        (maxChannel - minChannel) / max(maxChannel, 0.0001));
+    float bloomWeight = smoothstep(0.55, 0.85, maxChannel) * neutrality;
+    return color * bloomWeight;
 }
 
 void main() {

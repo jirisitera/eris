@@ -48,20 +48,21 @@ public final class ModuleContext implements AutoCloseable {
     }
 
     public Entity label(Surface.Rect rect, Component text) {
+        double scale = Math.min(rect.width() * Surface.WIDTH, rect.height() * Surface.DEPTH) * 2;
         Entity entity = new Entity(EntityType.TEXT_DISPLAY);
         entity.editEntityMeta(TextDisplayMeta.class, meta -> {
             meta.setText(text);
             meta.setBackgroundColor(0);
             meta.setShadow(false);
             meta.setLineWidth(100);
-            meta.setScale(new Vec(0.28, 0.28, 0.28));
+            meta.setScale(new Vec(scale, scale, scale));
             // Face upwards; glyph tops point towards +Z, away from the defuser.
             Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.PI, (float) -Math.PI / 2, 0);
             meta.setLeftRotation(new float[]{rotation.x, rotation.y, rotation.z, rotation.w});
             meta.setBrightness(15, 15);
         });
         // Text displays are centered horizontally but start at the baseline vertically.
-        return spawn(entity, Surface.world(rect.center(), 0.015).add(0, 0, -0.025));
+        return spawn(entity, Surface.world(rect.center(), 0.015).add(0, 0, -scale * 0.09));
     }
 
     private Entity spawn(Entity entity, Pos position) {

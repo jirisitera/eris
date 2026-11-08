@@ -25,10 +25,21 @@ public final class BombModules implements AutoCloseable {
     }
 
     public static void create(Instance instance, Runnable strike) {
+        create(instance, strike, BombLayouts.FULL);
+    }
+
+    public static void create(Instance instance, Runnable strike, BombLayout layout) {
         if (get(instance) != null) return;
         BombModules bomb = new BombModules(instance, strike);
-        instance.setTag(TAG, bomb);
-        bomb.add(GlyphButtons.randomDefinition(), new Surface.Rect(0, 0, 1, 1));
+        try {
+            for (BombLayout.Placement placement : layout.placements()) {
+                bomb.add(placement.module().get(), placement.bounds());
+            }
+            instance.setTag(TAG, bomb);
+        } catch (RuntimeException e) {
+            bomb.close();
+            throw e;
+        }
     }
 
     public synchronized void add(BombModule.Definition definition, Surface.Rect slot) {
