@@ -35,7 +35,7 @@ public final class BombView {
      * Spawn once per player/instance; shader activation does not change entity lifetime.
      */
     public static void attach(Player player) {
-        detach(player);
+        if (player.hasTag(STATE)) return;
         if (PlayerRole.get(player) != PlayerRole.BOMB_DEFUSER || player.getInstance() == null) return;
         Entity cursor = new Entity(EntityType.ITEM_DISPLAY);
         cursor.setNoGravity(true);
@@ -63,6 +63,21 @@ public final class BombView {
             .thenRun(() -> {
                 if (player.getTag(STATE) != state) cursor.remove();
             });
+    }
+
+    /**
+     * Clear interaction state between rounds without destroying the two cursor entities.
+     */
+    public static void reset(Player player) {
+        State state = player.getTag(STATE);
+        if (state == null) return;
+        clearHover(player);
+        state.active = false;
+        state.lastPoint = null;
+        state.fullscreenCursor = new ClientView.CursorPosition(0, 0);
+        state.surfaceCursor = new ClientView.CursorPosition(0, 0);
+        state.indicator.editEntityMeta(ItemDisplayMeta.class, meta -> meta.setItemStack(ItemStack.AIR));
+        state.indicator.updateViewableRule(viewer -> PlayerRole.get(viewer) == PlayerRole.DEFUSAL_HELPER);
     }
 
     public static void enter(Player player) {

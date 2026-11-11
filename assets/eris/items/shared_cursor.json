@@ -1,6 +1,6 @@
 {
-    "model": {
-        "type": "minecraft:model",
-        "model": "eris:item/shared_cursor"
-    }
+  "model": {
+    "type": "minecraft:model",
+    "model": "eris:item/shared_cursor"
+  }
 }

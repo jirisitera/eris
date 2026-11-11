@@ -5,6 +5,7 @@ import net.minestom.server.tag.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Instance-owned assembly and input routing; reconnecting players share the same puzzle.
@@ -13,7 +14,8 @@ public final class BombModules implements AutoCloseable {
     private static final Tag<BombModules> TAG = Tag.Transient("bombModules");
     private final Instance instance;
     private final Runnable strike;
-    private final List<BombModule> modules = new ArrayList<>();
+    private final List<Mounted> modules = new ArrayList<>();
+    private boolean active;
 
     private BombModules(Instance instance, Runnable strike) {
         this.instance = instance;
@@ -33,7 +35,7 @@ public final class BombModules implements AutoCloseable {
         BombModules bomb = new BombModules(instance, strike);
         try {
             for (BombLayout.Placement placement : layout.placements()) {
-                bomb.add(placement.module().get(), placement.bounds());
+                bomb.add(placement.module(), placement.bounds());
             }
             instance.setTag(TAG, bomb);
         } catch (RuntimeException e) {
@@ -42,10 +44,12 @@ public final class BombModules implements AutoCloseable {
         }
     }
 
-    public synchronized void add(BombModule.Definition definition, Surface.Rect slot) {
-        ModuleContext context = new ModuleContext(instance, slot, strike);
+    private void add(Supplier<? extends BombModule.Definition> definition, Surface.Rect slot) {
+        ModuleContext context = new ModuleContext(instance, slot, () -> {
+            if (active) strike.run();
+        });
         try {
-            modules.add(definition.mount(context));
+            modules.add(new Mounted(definition.get().mount(context), definition));
         } catch (RuntimeException e) {
             context.close();
             throw e;
@@ -53,21 +57,43 @@ public final class BombModules implements AutoCloseable {
     }
 
     public synchronized void hover(Surface.Point cursor) {
-        modules.forEach(module -> module.hover(cursor));
+        modules.forEach(mounted -> mounted.module.hover(active ? cursor : null));
     }
 
     public synchronized void press(Surface.Point cursor) {
-        modules.forEach(module -> module.press(cursor));
+        if (!active || cursor == null) return;
+        modules.forEach(mounted -> mounted.module.press(cursor));
+    }
+
+    public synchronized void start() {
+        active = true;
+    }
+
+    public synchronized void reset() {
+        active = false;
+        modules.forEach(mounted -> mounted.module.reset(mounted.definition.get()));
     }
 
     public synchronized boolean solved() {
-        return !modules.isEmpty() && modules.stream().allMatch(BombModule::solved);
+        return !modules.isEmpty() && modules.stream().allMatch(mounted -> mounted.module.solved());
+    }
+
+    public synchronized int solvedCount() {
+        return (int) modules.stream().filter(mounted -> mounted.module.solved()).count();
+    }
+
+    public synchronized int totalCount() {
+        return modules.size();
     }
 
     @Override
     public synchronized void close() {
-        modules.forEach(BombModule::close);
+        modules.forEach(mounted -> mounted.module.close());
         modules.clear();
+        active = false;
         instance.removeTag(TAG);
+    }
+
+    private record Mounted(BombModule module, Supplier<? extends BombModule.Definition> definition) {
     }
 }

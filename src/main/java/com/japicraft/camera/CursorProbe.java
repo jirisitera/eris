@@ -2,7 +2,9 @@ package com.japicraft.camera;
 
 import com.japicraft.Eris;
 import com.japicraft.emote.EmoteWheel;
+import com.japicraft.environment.GameStageManager;
 import net.minestom.server.color.Color;
+import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
@@ -15,12 +17,16 @@ import net.minestom.server.tag.Tag;
 import java.util.List;
 
 public final class CursorProbe {
-    private static final String ITEM_MODEL = Eris.NAMESPACE + Eris.NAMESPACE_SEPARATOR + "ui_probe";
+    private static final String ITEM_MODEL = Eris.NAMESPACE + ":ui_probe";
     private static final Color BUFFER_COLOR = new Color(91, 126, 209);
     private static final Tag<ProbeState> TAG = Tag.Transient("cursorProbe");
 
+    public static boolean isProbe(ItemStack item) {
+        return item.material() == Material.ECHO_SHARD && ITEM_MODEL.equals(item.get(DataComponents.ITEM_MODEL));
+    }
+
     // Encodes angles and UI flags into the 8 custom-model-data colors read by cursor.fsh at row y=19
-    private static ItemStack createProbe(int mouseYaw, int mousePitch, int rawYaw, int rawPitch, boolean emoteWheelOpen, boolean surfaceMode) {
+    private static ItemStack createProbe(int mouseYaw, int mousePitch, int rawYaw, int rawPitch, boolean emoteWheelOpen, boolean surfaceMode, int lobbyData) {
         return ItemStack.of(Material.ECHO_SHARD).withItemModel(ITEM_MODEL).withCustomModelData(List.of(), List.of(), List.of(), List.of(
             new Color(mouseYaw >>> 8, mouseYaw & 0xFF, mousePitch >>> 8),
             new Color(mousePitch & 0xFF, 91, 126),
@@ -29,7 +35,7 @@ public final class CursorProbe {
             BUFFER_COLOR,
             new Color(emoteWheelOpen ? 255 : 0, 91, 126),
             new Color(surfaceMode ? 255 : 0, 91, 126),
-            BUFFER_COLOR
+            new Color(lobbyData)
         ));
     }
 
@@ -72,23 +78,26 @@ public final class CursorProbe {
         }
     }
 
-    public static void update(Player player, boolean force) {
+    private static void update(Player player, boolean force) {
         int mouseYaw = encodeAngle(ClientView.mouseYaw(player), 360.0F);
         int mousePitch = encodeAngle(ClientView.mousePitch(player), 360.0F);
         int rawYaw = encodeAngle(wrapAngle(ClientView.yaw(player)), 1440.0F);
         int rawPitch = encodeAngle(ClientView.pitch(player), 180.0F);
         boolean emoteWheelOpen = EmoteWheel.isOpen(player);
         boolean surfaceMode = BombView.isActive(player);
+        int lobbyData = GameStageManager.lobbyUiData(player);
         long key = ((long) mouseYaw << 48) | ((long) mousePitch << 32) | ((long) rawYaw << 16) | rawPitch;
 
         ProbeState previous = player.getTag(CursorProbe.TAG);
-        if (!force && previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen && previous.surfaceMode == surfaceMode && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
+        boolean unchanged = previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen
+            && previous.surfaceMode == surfaceMode && previous.lobbyData == lobbyData;
+        if (!force && unchanged && player.getEquipment(EquipmentSlot.OFF_HAND) == previous.item) {
             return;
         }
-        ItemStack item = (!force && previous != null && previous.key == key && previous.emoteWheelOpen == emoteWheelOpen && previous.surfaceMode == surfaceMode)
+        ItemStack item = !force && unchanged
             ? previous.item
-            : createProbe(mouseYaw, mousePitch, rawYaw, rawPitch, emoteWheelOpen, surfaceMode);
-        player.setTag(CursorProbe.TAG, new ProbeState(key, emoteWheelOpen, surfaceMode, item));
+            : createProbe(mouseYaw, mousePitch, rawYaw, rawPitch, emoteWheelOpen, surfaceMode, lobbyData);
+        player.setTag(CursorProbe.TAG, new ProbeState(key, emoteWheelOpen, surfaceMode, lobbyData, item));
 
         if (force || player.getEquipment(EquipmentSlot.OFF_HAND) != item) {
             player.setEquipment(EquipmentSlot.OFF_HAND, item);
@@ -113,6 +122,6 @@ public final class CursorProbe {
     public record ScreenPosition(float x, float y) {
     }
 
-    private record ProbeState(long key, boolean emoteWheelOpen, boolean surfaceMode, ItemStack item) {
+    private record ProbeState(long key, boolean emoteWheelOpen, boolean surfaceMode, int lobbyData, ItemStack item) {
     }
 }

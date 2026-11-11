@@ -32,7 +32,7 @@ public final class PlayerUpdateManager {
             if (!ClientView.record(player, event.getPacket())) {
                 return;
             }
-            CameraAnchor.updateTarget(player);
+            CameraAnchor.updateInput(player);
             BombView.update(player);
             CursorProbe.update(player);
         });

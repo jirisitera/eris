@@ -1,6 +1,7 @@
 package com.japicraft;
 
 import com.japicraft.bettermodel.BetterModelMinestom;
+import com.japicraft.command.ForceStartCommand;
 import com.japicraft.command.InstanceCommand;
 import com.japicraft.command.StopCommand;
 import com.japicraft.command.VoiceChatCommand;
@@ -21,7 +22,6 @@ import java.util.Scanner;
 
 public final class Eris {
     public static final String NAMESPACE = "eris";
-    public static final String NAMESPACE_SEPARATOR = ":";
     public static final ComponentLogger LOGGER = ComponentLogger.logger(Eris.class);
     public static CommandSender CONSOLE;
 
@@ -60,6 +60,7 @@ public final class Eris {
         CommandManager commandManager = MinecraftServer.getCommandManager();
 
         commandManager.register(new InstanceCommand());
+        commandManager.register(new ForceStartCommand());
         commandManager.register(new StopCommand());
         commandManager.register(new VoiceChatCommand());
 
@@ -74,7 +75,6 @@ public final class Eris {
 
         new InstanceManager().register();
         ServerListManager.register();
-        //GlobalResourcePack.register();
 
         BetterModelMinestom.register();
         LOGGER.atInfo().log(Component.text("Loaded BetterModel integration."));

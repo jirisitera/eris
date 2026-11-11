@@ -1,17 +1,33 @@
 {
-	"format_version": "26.3",
-	"credit": "Made with Blockbench",
-	"textures": {
-		"particle": "eris:item/shared_cursor",
-		"cursor": "eris:item/shared_cursor"
-	},
-	"elements": [
-		{
-			"from": [8, 8, 8],
-			"to": [16, 8, 16],
-			"faces": {
-				"up": {"uv": [0, 0, 16, 16], "texture": "#cursor"}
-			}
-		}
-	]
+  "format_version": "26.3",
+  "credit": "Made with Blockbench",
+  "textures": {
+    "particle": "eris:item/shared_cursor",
+    "cursor": "eris:item/shared_cursor"
+  },
+  "elements": [
+    {
+      "from": [
+        8,
+        8,
+        8
+      ],
+      "to": [
+        16,
+        8,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#cursor"
+        }
+      }
+    }
+  ]
 }

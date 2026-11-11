@@ -10,6 +10,11 @@ public interface BombModule extends AutoCloseable {
 
     boolean solved();
 
+    /**
+     * Replace puzzle state and visuals while keeping the mounted entities.
+     */
+    void reset(Definition definition);
+
     @Override
     void close();
 

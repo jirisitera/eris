@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AnimationManager {
     private static final int TIMER_TAG_G = 253;
@@ -36,6 +35,14 @@ public class AnimationManager {
         }
     }
 
+    /**
+     * Reset an animated pose without closing its tracker or removing model displays.
+     */
+    public static void stopAnimation(Entity entity, String animation) {
+        EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
+        if (registry != null) registry.trackers().forEach(tracker -> tracker.stopAnimation(animation));
+    }
+
     public static int encodeTimer(int minutes, int seconds, int strikes) {
         int clampedMinutes = Math.clamp(minutes, 0, 63);
         int clampedSeconds = Math.clamp(seconds, 0, 59);
@@ -49,8 +56,8 @@ public class AnimationManager {
         if (tracker == null) {
             return;
         }
-        int totalSeconds = Optional.ofNullable(entity.getTag(TIMER_SECONDS_TAG)).orElse(0);
-        int strikes = Optional.ofNullable(entity.getTag(TIMER_STRIKES_TAG)).orElse(0);
+        int totalSeconds = getTimerSeconds(entity);
+        int strikes = getStrikes(entity);
         int rgb = encodeTimer(totalSeconds / 60, totalSeconds % 60, strikes);
         TrackerUpdateAction tintAction = TrackerUpdateAction.tint(rgb);
         tracker.update(tintAction);
@@ -77,18 +84,15 @@ public class AnimationManager {
         return Optional.ofNullable(entity.getTag(TIMER_STRIKES_TAG)).orElse(0);
     }
 
-    public static void addStrike(@NotNull Entity entity) {
-        int next = Math.clamp(getStrikes(entity) + 1, 0, 3);
-        setStrikes(entity, next);
+    public static int getTimerSeconds(@NotNull Entity entity) {
+        return Optional.ofNullable(entity.getTag(TIMER_SECONDS_TAG)).orElse(0);
     }
 
     public static void startTimer(@NotNull Entity entity, int minutes, int seconds, @Nullable Runnable onComplete) {
         stopTimer(entity);
-        int initialSeconds = Math.clamp(minutes, 0, 63) * 60 + Math.clamp(seconds, 0, 59);
-        AtomicInteger remaining = new AtomicInteger(initialSeconds);
-        setTimer(entity, remaining.get());
+        setTimer(entity, minutes, seconds);
 
-        if (initialSeconds <= 0) {
+        if (getTimerSeconds(entity) == 0) {
             if (onComplete != null) {
                 onComplete.run();
             }
@@ -96,7 +100,7 @@ public class AnimationManager {
         }
 
         Task task = entity.scheduler().buildTask(() -> {
-            int next = remaining.decrementAndGet();
+            int next = getTimerSeconds(entity) - 1;
             setTimer(entity, Math.max(0, next));
             if (next <= 0) {
                 stopTimer(entity);
@@ -170,14 +174,8 @@ public class AnimationManager {
             return;
         }
 
-        ModelRenderer selectedModel = null;
-        BlueprintAnimation selectedAnim = null;
-
-        Optional<ModelRenderer> optModel = BetterModel.model(targetModel);
-        if (optModel.isPresent()) {
-            selectedModel = optModel.get();
-            selectedAnim = selectedModel.animation(animName).orElse(null);
-        }
+        ModelRenderer selectedModel = BetterModel.model(targetModel).orElse(null);
+        BlueprintAnimation selectedAnim = selectedModel == null ? null : selectedModel.animation(animName).orElse(null);
 
         if (selectedModel == null || selectedAnim == null) {
             return;
@@ -190,6 +188,14 @@ public class AnimationManager {
             created -> created.hideOption(EntityHideOption.DEFAULT)
         );
 
+        animate(tracker, selectedModel, selectedAnim, () -> tracker.stopAnimation(selectedAnim.name()));
+    }
+
+    /**
+     * Shared idle/conflict/completion handling for scene models and player emotes.
+     */
+    public static void animate(EntityTracker tracker, ModelRenderer selectedModel,
+                               BlueprintAnimation selectedAnim, Runnable finishedWithoutIdle) {
         Optional<BlueprintAnimation> idleOpt = selectedModel.animation("idle");
         boolean isIdle = "idle".equalsIgnoreCase(selectedAnim.name());
 
@@ -225,7 +231,6 @@ public class AnimationManager {
         // Prepare the animation completion callback
         Runnable onEnd;
         if (selectedAnim.loop() == AnimationIterator.Type.PLAY_ONCE) {
-            String finishedAnimName = selectedAnim.name();
             AtomicBoolean ended = new AtomicBoolean(false);
             onEnd = () -> {
                 if (!ended.compareAndSet(false, true)) {
@@ -243,7 +248,7 @@ public class AnimationManager {
                             tracker.animate(idleOpt.get(), new AnimationModifier(0, 0, AnimationIterator.Type.LOOP));
                         }
                     } else {
-                        tracker.stopAnimation(finishedAnimName);
+                        finishedWithoutIdle.run();
                     }
                 });
             };

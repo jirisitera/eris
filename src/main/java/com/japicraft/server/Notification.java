@@ -1,6 +1,7 @@
 package com.japicraft.server;
 
-import com.japicraft.constants.Font;
+import com.japicraft.Eris;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -9,6 +10,7 @@ import net.minestom.server.entity.Player;
 
 public class Notification {
     private static final String BACKGROUND = "?";
+    private static final Key FONT = Key.key(Eris.NAMESPACE, "default");
     private static final TextColor HIDE_COLOR = TextColor.color(2, 1, 2);
 
     private static TextColor markTextColor(TextColor color) {
@@ -36,20 +38,12 @@ public class Notification {
         show(player, message, TextColor.fromHexString("#FFFFFF"), TextColor.fromHexString("#282C40"), 40, 20, 40);
     }
 
-    public static void warn(Player player, String message) {
-        show(player, message, TextColor.fromHexString("#FF5555"), TextColor.fromHexString("#402828"), 80, 30, 80);
-    }
-
-    public static void success(Player player, String message) {
-        show(player, message, TextColor.fromHexString("#55FF55"), TextColor.fromHexString("#284028"), 40, 60, 60);
-    }
-
     private static void show(Player player, String message, TextColor textColor, TextColor backgroundColor, int fadeIn, int stay, int fadeOut) {
         player.showTitle(Title.title(Component.empty().shadowColor(ShadowColor.none()).append(
-                Component.text(Notification.BACKGROUND).font(Font.DEFAULT).color(Notification.safeBackgroundColor(backgroundColor)),
+                Component.text(Notification.BACKGROUND).font(FONT).color(Notification.safeBackgroundColor(backgroundColor)),
                 Component.text(message).color(Notification.HIDE_COLOR),
                 Component.text(message).color(Notification.markTextColor(textColor)).shadowColor(Notification.markShadowColor(textColor)),
-                Component.text(Notification.BACKGROUND).font(Font.DEFAULT).color(Notification.HIDE_COLOR)
+                Component.text(Notification.BACKGROUND).font(FONT).color(Notification.HIDE_COLOR)
             ), Component.empty(), fadeIn, stay, fadeOut)
         );
     }

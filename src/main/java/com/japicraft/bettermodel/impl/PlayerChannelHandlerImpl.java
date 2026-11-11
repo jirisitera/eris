@@ -7,7 +7,10 @@ import kr.toxicity.model.api.nms.Identifiable;
 import kr.toxicity.model.api.nms.PlayerChannelHandler;
 import kr.toxicity.model.api.tracker.EntityTrackerRegistry;
 import kr.toxicity.model.api.tracker.TrackerUpdateAction;
-import net.minestom.server.entity.*;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.LivingEntity;
+import net.minestom.server.entity.Metadata;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerPacketOutEvent;
 import net.minestom.server.instance.Instance;
@@ -161,15 +164,8 @@ final class PlayerChannelHandlerImpl implements PlayerChannelHandler {
 
     private @Nullable ServerPacket equipment(@NotNull EntityEquipmentPacket packet) {
         EntityTrackerRegistry registry = this.registryOf(packet.entityId());
-        if (registry == null || !registry.hideOption(this.player.getUuid()).equipment()) {
-            return null;
-        }
-        if (packet.equipments().values().stream().allMatch(ItemStack::isAir)) {
-            return null;
-        }
-        EnumMap<EquipmentSlot, ItemStack> empty = new EnumMap<>(EquipmentSlot.class);
-        packet.equipments().forEach((slot, item) -> empty.put(slot, ItemStack.AIR));
-        return new EntityEquipmentPacket(packet.entityId(), empty);
+        return Packets.equipmentForViewer(packet, this.player,
+            registry != null && registry.hideOption(this.player.getUuid()).equipment());
     }
 
     private boolean hidesOwnEquipment() {

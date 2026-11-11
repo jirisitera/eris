@@ -4,6 +4,7 @@ import com.japicraft.bettermodel.MinestomPlayer;
 import com.japicraft.camera.BombView;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.emote.EmoteManager;
+import com.japicraft.environment.GameStageManager;
 import kr.toxicity.model.api.armor.PlayerArmor;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -92,6 +93,7 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
     @Override
     public float headYaw() {
         if (CameraAnchor.isAttached(this.player)) {
+            if (!GameStageManager.isGame(this.player)) return bodyYaw();
             return BombView.headYaw(this.player);
         }
         return this.player.getPosition().yaw();
@@ -100,6 +102,7 @@ final class BasePlayerImpl extends BaseEntityImpl implements BasePlayer {
     @Override
     public float pitch() {
         if (CameraAnchor.isAttached(this.player)) {
+            if (!GameStageManager.isGame(this.player)) return 0;
             return BombView.headPitch(this.player);
         }
         return this.player.getPosition().pitch();

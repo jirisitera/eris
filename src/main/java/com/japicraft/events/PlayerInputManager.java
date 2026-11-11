@@ -5,6 +5,7 @@ import com.japicraft.camera.CameraAnchor;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.environment.GameStageManager;
+import com.japicraft.environment.LobbyUi;
 import com.japicraft.server.Notification;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
@@ -17,7 +18,10 @@ public final class PlayerInputManager {
     public static void register() {
         MinecraftServer.getGlobalEventHandler().addListener(PlayerHandAnimationEvent.class, event -> {
             Player player = event.getPlayer();
-            if (!GameStageManager.isGame(player)) return;
+            if (!GameStageManager.isGame(player)) {
+                if (event.getHand() == PlayerHand.MAIN) LobbyUi.click(player);
+                return;
+            }
             if (BombView.isActive(player)) {
                 if (event.getHand() == PlayerHand.MAIN) BombView.press(player);
                 return;

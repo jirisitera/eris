@@ -8,6 +8,9 @@
 
 uniform sampler2D InSampler;
 uniform sampler2D CursorSampler;
+uniform sampler2D FontSampler;
+
+#include <eris:lobby.glsl>
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
@@ -113,6 +116,12 @@ void main() {
     if (getLookAngles(lookAngles) && !surfaceMode) {
         float aspect = screenSize.x / screenSize.y;
         vec2 cursorNdc = clamp(lookAngles / 90.0, -1.0, 1.0);
+        vec2 cursorUv = 0.5 + cursorNdc * 0.5;
+        ivec3 lobbyData = ivec3(round(texelFetch(InSampler, ivec2(7, CURSOR_PROBE_ROW_Y), 0).rgb * 255.0));
+        if (lobbyData.r == 255) {
+            vec2 point = vec2(texCoord.x, 1.0 - texCoord.y);
+            sceneColor = renderLobby(sceneColor, point, cursorUv, screenSize, lobbyData);
+        }
 
         bool emoteWheelOpen = round(texelFetch(InSampler, ivec2(5, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 0.5;
         if (emoteWheelOpen) {
@@ -123,7 +132,6 @@ void main() {
             sceneColor = mix(sceneColor, wheel.rgb, wheel.a);
         }
 
-        vec2 cursorUv = 0.5 + cursorNdc * 0.5;
         vec2 fragTopLeft = vec2(gl_FragCoord.x, screenSize.y - gl_FragCoord.y);
         vec2 cursorOrigin = cursorUv * screenSize;
         float cursorScale = max(1.0, round(screenSize.y / 540.0));

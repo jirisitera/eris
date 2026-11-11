@@ -22,21 +22,9 @@ public final class PlayerSetupManager {
             Player player = event.getPlayer();
 
             player.setGameMode(GameMode.ADVENTURE);
-            player.setInvisible(true);
 
-            BombView.detach(player);
-            EmoteWheel.detach(player);
-            CameraAnchor.attach(player);
-            BombView.attach(player);
-            CursorProbe.forceUpdate(player);
             ActionBarService.schedule(player);
             GameStageManager.join(player);
-
-            player.scheduler().scheduleNextTick(() -> {
-                CameraAnchor.syncBodyMounts(player);
-                EmoteManager.play(player, "steve", "idle");
-                CursorProbe.forceUpdate(player);
-            });
         });
         MinecraftServer.getGlobalEventHandler().addListener(PlayerLoadedEvent.class, event -> CursorProbe.forceUpdate(event.getPlayer()));
 

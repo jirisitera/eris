@@ -8,17 +8,23 @@ import java.util.List;
  */
 public final class ButtonSequence {
     private final List<Integer> order;
+    private final int controls;
     private int progress;
 
     public ButtonSequence(List<Integer> order) {
+        this(order.size(), order);
+    }
+
+    public ButtonSequence(int controls, List<Integer> order) {
         this.order = List.copyOf(order);
-        if (order.isEmpty() || new HashSet<>(order).size() != order.size()
-            || order.stream().anyMatch(index -> index < 0 || index >= order.size()))
-            throw new IllegalArgumentException("Order must be a permutation of button indices");
+        this.controls = controls;
+        if (controls < 1 || order.isEmpty() || new HashSet<>(order).size() != order.size()
+            || order.stream().anyMatch(index -> index < 0 || index >= controls))
+            throw new IllegalArgumentException("Expected distinct, valid control indices");
     }
 
     public Result press(int index) {
-        if (solved() || index < 0 || index >= order.size() || accepted(index)) return Result.IGNORED;
+        if (solved() || index < 0 || index >= controls || accepted(index)) return Result.IGNORED;
         if (order.get(progress) != index) {
             progress = 0;
             return Result.STRIKE;
