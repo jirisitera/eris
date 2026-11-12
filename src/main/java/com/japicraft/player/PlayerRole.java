@@ -4,9 +4,9 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
 
 public enum PlayerRole {
-    BOMB_DEFUSER("Bomb defuser"),
-    MANUAL_EXPERT("Manual expert"),
-    DEFUSAL_HELPER("Defusal helper");
+    BOMB_DEFUSER("Defuzér bomby (slepý)"),
+    MANUAL_EXPERT("Expert s manuálem (hluchý)"),
+    DEFUSAL_HELPER("Komunikátor (němý)");
 
     static final Tag<PlayerRole> TAG = Tag.Transient("instanceRole");
     private final String displayName;
