@@ -168,7 +168,7 @@ public final class GameStageManager {
         player.scheduler().scheduleNextTick(() -> {
             if (player.getInstance() == null || stage(player) != stage) return;
             CameraAnchor.syncBodyMounts(player);
-            EmoteManager.play(player, "steve", "idle");
+            EmoteManager.play(player, "steve", playing ? "idle" : "standing");
             CursorProbe.forceUpdate(player);
         });
 

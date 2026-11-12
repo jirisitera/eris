@@ -39,6 +39,13 @@ bool getLookAngles(out vec2 lookAngles) {
     }
 
     vec2 mouseLook = decodeAngles(ivec2(0, CURSOR_PROBE_ROW_Y), ivec2(1, CURSOR_PROBE_ROW_Y), 360.0, 360.0);
+    ivec3 mode = ivec3(round(texelFetch(InSampler, ivec2(6, CURSOR_PROBE_ROW_Y), 0).rgb * 255.0));
+    if (mode.g == 255) {
+        // Corrections and their probe arrive together, but the raw overlay can still
+        // contain the previous frame's angles. Never predict across that discontinuity.
+        lookAngles = mouseLook;
+        return true;
+    }
     bool hasLook = ivec3(round(texelFetch(InSampler, ivec2(28, PLAYER_LOOK_ROW_Y), 0).rgb * 255.0)) == ACTIVE_MARKER;
     if (!hasLook) {
         lookAngles = mouseLook;
@@ -47,9 +54,20 @@ bool getLookAngles(out vec2 lookAngles) {
 
     vec2 rawLook = decodeAngles(ivec2(26, PLAYER_LOOK_ROW_Y), ivec2(27, PLAYER_LOOK_ROW_Y), 1440.0, 180.0);
     vec2 serverLook = decodeAngles(ivec2(2, CURSOR_PROBE_ROW_Y), ivec2(3, CURSOR_PROBE_ROW_Y), 1440.0, 180.0);
-    float deltaYaw = mod(mod(rawLook.x - serverLook.x + 720.0, 1440.0) + 1440.0, 1440.0) - 720.0;
-    float deltaPitch = rawLook.y - serverLook.y;
-    lookAngles = vec2(mouseLook.x + deltaYaw, mouseLook.y + deltaPitch);
+    vec2 delta = vec2(mod(rawLook.x - serverLook.x + 720.0, 1440.0) - 720.0,
+        rawLook.y - serverLook.y);
+    float limit = mode.r == 255 ? 35.0 : 90.0;
+    // Edge overscroll must not re-enter the canvas when a raw angle wraps. Pin
+    // each saturated axis until server input confirms movement back into bounds.
+    // Large gaps are ambiguous/stale; let the next probe resolve them instead.
+    for (int axis = 0; axis < 2; axis++) {
+        if (abs(mouseLook[axis]) >= limit - 0.01 || abs(delta[axis]) > 90.0) {
+            delta[axis] = 0.0;
+        } else {
+            delta[axis] = clamp(delta[axis], -20.0, 20.0);
+        }
+    }
+    lookAngles = clamp(mouseLook + delta, vec2(-limit), vec2(limit));
     return true;
 }
 
@@ -115,7 +133,12 @@ void main() {
     }
     if (getLookAngles(lookAngles) && !surfaceMode) {
         float aspect = screenSize.x / screenSize.y;
+        bool emoteWheelOpen = round(texelFetch(InSampler, ivec2(5, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 0.5;
         vec2 cursorNdc = clamp(lookAngles / 90.0, -1.0, 1.0);
+        // Map the server's reference wheel coordinates to the actual viewport.
+        // Multiplying this cursor by aspect below now recovers exactly the same
+        // selection vector as EmoteWheel.hoveredSlice, at every window shape.
+        if (emoteWheelOpen) cursorNdc.x *= EMOTE_WHEEL_CURSOR_ASPECT / aspect;
         vec2 cursorUv = 0.5 + cursorNdc * 0.5;
         ivec3 lobbyData = ivec3(round(texelFetch(InSampler, ivec2(7, CURSOR_PROBE_ROW_Y), 0).rgb * 255.0));
         if (lobbyData.r == 255) {
@@ -123,7 +146,6 @@ void main() {
             sceneColor = renderLobby(sceneColor, point, cursorUv, screenSize, lobbyData);
         }
 
-        bool emoteWheelOpen = round(texelFetch(InSampler, ivec2(5, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 0.5;
         if (emoteWheelOpen) {
             vec2 cursorOffset = vec2(cursorNdc.x * aspect, -cursorNdc.y);
             int hoveredSlice = getHoveredEmoteSlice(cursorOffset);

@@ -87,7 +87,7 @@ public final class BombView {
         State state = player.getTag(STATE);
         state.fullscreenCursor = EmoteWheel.dismissForModeSwitch(player);
         state.active = true;
-        // Switch logical cursors and shader mode together, without resetting client rotation.
+        // Switch logical cursors, client rotation, and shader mode together.
         ClientView.selectCursor(player, state.surfaceCursor);
         state.indicator.editEntityMeta(ItemDisplayMeta.class, meta -> meta.setItemStack(SHARED_CURSOR));
         update(player);

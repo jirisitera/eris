@@ -19,11 +19,8 @@ bool lobbyInside(vec2 point, vec4 bounds) {
     return all(greaterThanEqual(point, bounds.xy)) && all(lessThanEqual(point, bounds.zw));
 }
 
-vec4 lobbyRoleBounds(int role) {
-    float left = 0.08 + float(role) * 0.29;
-    return vec4(left, 0.755, left + 0.26, 0.835);
-}
-
+const vec4 LOBBY_PREVIOUS_ROLE_BOUNDS = vec4(0.24, 0.755, 0.31, 0.835);
+const vec4 LOBBY_NEXT_ROLE_BOUNDS = vec4(0.69, 0.755, 0.76, 0.835);
 const vec4 LOBBY_READY_BOUNDS = vec4(0.35, 0.87, 0.65, 0.935);
 
 float lobbyText(vec2 point, vec2 center, float height, float maxWidth, float aspect, int label) {
@@ -47,8 +44,18 @@ vec3 lobbyButton(vec3 scene, vec2 point, vec2 cursor, vec4 bounds, vec2 screenSi
     vec2 edge = min(point - bounds.xy, bounds.zw - point) * screenSize;
     float border = 1.0 - step(hovered || selected ? 2.0 : 1.0, min(edge.x, edge.y));
     fill = mix(fill, selected || hovered ? accent : vec3(0.24, 0.30, 0.39), border);
-    float ink = lobbyText(point, (bounds.xy + bounds.zw) * 0.5, 0.026, bounds.z - bounds.x - 0.025,
-        screenSize.x / screenSize.y, label);
+    float ink;
+    if (label < 0) {
+        // Negative labels draw left/right chevrons without depending on font glyphs.
+        vec2 arrow = (point - (bounds.xy + bounds.zw) * 0.5) / 0.014;
+        arrow.x *= screenSize.x / screenSize.y;
+        float direction = label == -1 ? -1.0 : 1.0;
+        ink = (1.0 - step(0.16, abs(arrow.x - direction * (0.5 - abs(arrow.y)))))
+            * (1.0 - step(1.0, abs(arrow.y)));
+    } else {
+        ink = lobbyText(point, (bounds.xy + bounds.zw) * 0.5, 0.026, bounds.z - bounds.x - 0.025,
+            screenSize.x / screenSize.y, label);
+    }
     return mix(fill, selected || hovered ? vec3(0.95) : vec3(0.75, 0.81, 0.87), ink);
 }
 
@@ -58,9 +65,10 @@ vec3 renderLobby(vec3 scene, vec2 point, vec2 cursor, vec2 screenSize, ivec3 dat
     scene = mix(scene, vec3(0.025, 0.035, 0.06), 0.94);
     float heading = lobbyText(point, vec2(0.5, 0.702), 0.032, 0.75, aspect, 0);
     scene = mix(scene, vec3(0.87, 0.93, 1.0), heading);
-    for (int role = 0; role < 3; role++) {
-        scene = lobbyButton(scene, point, cursor, lobbyRoleBounds(role), screenSize, data.g == role, false, role + 1);
-    }
+    scene = lobbyButton(scene, point, cursor, LOBBY_PREVIOUS_ROLE_BOUNDS, screenSize, false, false, -1);
+    float roleInk = lobbyText(point, vec2(0.5, 0.795), 0.026, 0.34, aspect, clamp(data.g, 0, 2) + 1);
+    scene = mix(scene, vec3(0.95), roleInk);
+    scene = lobbyButton(scene, point, cursor, LOBBY_NEXT_ROLE_BOUNDS, screenSize, false, false, -2);
     bool ready = (data.b & 1) != 0;
     bool conflict = (data.b & 2) != 0;
     bool waiting = (data.b & 4) != 0;

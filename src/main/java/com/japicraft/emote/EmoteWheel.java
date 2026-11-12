@@ -9,7 +9,9 @@ import net.minestom.server.tag.Tag;
 
 public final class EmoteWheel {
     public static final int EMOTE_COUNT = 8;
-    private static final float SCREEN_ASPECT_RATIO = 16.0F / 9.0F;
+    // Logical wheel cursor aspect, shared with emote_wheel.glsl. The shader maps
+    // cursor X to the actual viewport, so selection never needs client dimensions.
+    private static final float CURSOR_REFERENCE_ASPECT = 16.0F / 9.0F;
     private static final float CENTER_DEADZONE = 0.12F;
     private static final Tag<Boolean> OPEN_TAG = Tag.Transient("emoteWheelOpen");
     private static final Tag<ClientView.CursorPosition> CURSOR_TAG = Tag.Transient("emoteWheelCursor");
@@ -19,7 +21,7 @@ public final class EmoteWheel {
     public static int hoveredSlice(Player player) {
         if (BombView.isActive(player)) return -1;
         CursorProbe.ScreenPosition cursor = CursorProbe.screenPosition(player);
-        float dx = (cursor.x() - 0.5F) * 2.0F * SCREEN_ASPECT_RATIO;
+        float dx = (cursor.x() - 0.5F) * 2.0F * CURSOR_REFERENCE_ASPECT;
         float dy = (cursor.y() - 0.5F) * 2.0F;
         if (Math.hypot(dx, dy) < CENTER_DEADZONE) {
             return -1;

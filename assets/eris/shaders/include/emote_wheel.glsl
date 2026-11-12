@@ -1,5 +1,8 @@
 const float EMOTE_WHEEL_PI = 3.14159265;
 const float EMOTE_WHEEL_DEADZONE = 0.12;
+// Shared with EmoteWheel.java: logical cursor coordinates use a fixed reference
+// aspect, then cursor.fsh maps them into the client's actual viewport.
+const float EMOTE_WHEEL_CURSOR_ASPECT = 16.0 / 9.0;
 
 int getEmoteWheelSlice(float angle) {
     // Shift by half a slice (pi/8) so slice 0 is centered at 12 o'clock

@@ -10,6 +10,8 @@ import net.minestom.server.tag.Tag;
 public final class ClientView {
     public static final float MAX_CURSOR_YAW = 90.0F; // mouse degrees from the screen center to the screen edge
     public static final float MAX_CURSOR_PITCH = 90.0F;
+    private static final float RAW_PITCH_RECENTER_THRESHOLD = 75.0F;
+    private static final float VIEW_EPSILON = 0.0001F;
     private static final Tag<View> TAG = Tag.Transient("clientView");
     private static final Tag<Float> MOUSE_YAW = Tag.Transient("clientMouseYaw");
     private static final Tag<Float> MOUSE_PITCH = Tag.Transient("clientMousePitch");
@@ -31,6 +33,7 @@ public final class ClientView {
         player.setTag(MOUSE_YAW, 0.0F);
         player.setTag(MOUSE_PITCH, 0.0F);
         player.setTag(TAG, new View(player.getPosition().yaw(), player.getPosition().pitch()));
+        restoreCursor(player, new CursorPosition(0, 0));
     }
 
     public static boolean record(Player player, ClientPacket packet) {
@@ -44,7 +47,8 @@ public final class ClientView {
             case ClientPlayerRotationPacket rotation -> {
                 nextRawYaw = rotation.yaw();
                 nextRawPitch = rotation.pitch();
-                // ClientPlayerRotationPacket carries the client's raw unbounded yaw, so the difference never wraps at 180 degrees
+                // Rotation-only packets retain unbounded yaw. A fast movement can exceed
+                // half a turn between packets; wrapping that delta would reverse its direction.
                 deltaYaw = previous == null ? wrapDegrees(nextRawYaw) : nextRawYaw - previous.yaw();
                 deltaPitch = previous == null ? nextRawPitch : nextRawPitch - previous.pitch();
             }
@@ -59,13 +63,16 @@ public final class ClientView {
             }
         }
 
+        if (!Float.isFinite(nextRawYaw) || !Float.isFinite(nextRawPitch)) return false;
+
         View pendingView = player.getTag(PENDING_VIEW);
         if (pendingView != null) {
             // Rotation corrections immediately echo a rotation packet from the client.
             // Ignore old in-flight input and the correction itself on both axes until that echo arrives.
             deltaYaw = 0.0F;
             deltaPitch = 0.0F;
-            if (wrapDegrees(nextRawYaw - pendingView.yaw()) == 0.0F && nextRawPitch == pendingView.pitch()) {
+            if (Math.abs(wrapDegrees(nextRawYaw - pendingView.yaw())) <= VIEW_EPSILON
+                && Math.abs(nextRawPitch - pendingView.pitch()) <= VIEW_EPSILON) {
                 player.removeTag(PENDING_VIEW);
                 nextRawYaw = pendingView.yaw();
             }
@@ -88,6 +95,13 @@ public final class ClientView {
         player.setTag(MOUSE_YAW, nextMouseYaw);
         player.setTag(MOUSE_PITCH, nextMousePitch);
         player.setTag(TAG, new View(nextRawYaw, nextRawPitch));
+        // Minecraft clamps its own pitch to +/-90 independently of the virtual cursor.
+        // Edge overscroll and mode switches can offset these ranges. Rebase before the
+        // physical pitch limit strands the cursor short of its canvas edge.
+        if (!player.hasTag(PENDING_VIEW) && Math.abs(nextRawPitch) >= RAW_PITCH_RECENTER_THRESHOLD
+            && Math.abs(nextRawPitch - nextMousePitch) > VIEW_EPSILON) {
+            correctView(player, new View(wrapDegrees(nextRawYaw), nextMousePitch));
+        }
         return true;
     }
 
@@ -98,6 +112,10 @@ public final class ClientView {
         }
         View view = player.getTag(TAG);
         return view == null ? player.getPosition().yaw() : view.yaw();
+    }
+
+    public static boolean isCorrectionPending(Player player) {
+        return player.hasTag(PENDING_VIEW);
     }
 
     public static float pitch(Player player) {
@@ -125,23 +143,34 @@ public final class ClientView {
     }
 
     /**
-     * Change the virtual cursor while retaining the raw mouse baseline used by the shader.
+     * Change cursors and align the client's physical pitch range with the selected canvas.
      */
     public static void selectCursor(Player player, CursorPosition position) {
-        player.setTag(MOUSE_YAW, position.yaw());
-        player.setTag(MOUSE_PITCH, position.pitch());
-        CursorProbe.update(player);
+        restoreCursor(player, position);
     }
 
     public static void restoreCursor(Player player, CursorPosition position) {
-        player.setTag(MOUSE_YAW, position.yaw());
-        player.setTag(MOUSE_PITCH, position.pitch());
+        float yawLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_YAW;
+        float pitchLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_PITCH;
+        float yaw = Math.clamp(position.yaw(), -yawLimit, yawLimit);
+        float pitch = Math.clamp(position.pitch(), -pitchLimit, pitchLimit);
+        player.setTag(MOUSE_YAW, yaw);
+        player.setTag(MOUSE_PITCH, pitch);
+        correctView(player, new View(yaw, pitch));
+    }
+
+    private static void correctView(Player player, View target) {
         // Correct both client axes together, using the same baseline as the restored probe.
-        player.setTag(PENDING_VIEW, new View(position.yaw(), position.pitch()));
-        CursorProbe.updateWithRotation(player, new PlayerRotationPacket(position.yaw(), false, position.pitch(), false));
+        player.setTag(PENDING_VIEW, target);
+        CursorProbe.updateWithRotation(player, new PlayerRotationPacket(target.yaw(), false, target.pitch(), false));
     }
 
     public record CursorPosition(float yaw, float pitch) {
+        public CursorPosition {
+            if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+                throw new IllegalArgumentException("Cursor angles must be finite");
+            }
+        }
     }
 
     public record View(float yaw, float pitch) {
