@@ -18,13 +18,19 @@ import java.util.HexFormat;
 import java.util.UUID;
 
 public class GlobalResourcePack {
-    private static String calculateHash(URI uri) {
-        try (HttpClient client = HttpClient.newHttpClient()) {
-
+    static String calculateHash(URI uri) {
+        try (HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()) {
             HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
-
+            if (response.statusCode() != 200 || response.body().length == 0) {
+                throw new IOException("Resource pack download returned HTTP " + response.statusCode() + " with " + response.body().length + " bytes: " + uri);
+            }
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(response.body()));
-        } catch (InterruptedException | IOException | NoSuchAlgorithmException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Eris.LOGGER.error("Interrupted while downloading global resource pack from {}", uri, e);
+            return null;
+        } catch (IOException | NoSuchAlgorithmException e) {
+            Eris.LOGGER.error("Failed to calculate global resource pack hash from {}", uri, e);
             return null;
         }
     }
@@ -34,7 +40,6 @@ public class GlobalResourcePack {
     }
 
     public static void register() {
-
         URI packURI = URI.create("https://github.com/jirisitera/eris/releases/latest/download/eris.zip");
         String packHash = GlobalResourcePack.calculateHash(packURI);
         if (packHash == null) {
