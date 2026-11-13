@@ -3,5 +3,5 @@
 
 #define ERIS_UNLIT
 // @formatter:off
-#include <eris:item_vertex.glsl>
+#include <eris:item/vertex.glsl>
 // @formatter:on

@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel;
+package com.japicraft.integration.bettermodel;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -175,14 +175,6 @@ public final class BetterModelPackServer {
         player.sendResourcePacks(request);
     }
 
-    public static @Nullable ResourcePackInfo getPackInfo(@NotNull Player player) {
-        CompiledPack current = compiledPack;
-        if (current == null) {
-            return null;
-        }
-        return ResourcePackInfo.resourcePackInfo(current.id(), getUriFor(player), current.hash());
-    }
-
     public static @NotNull URI getUriFor(@NotNull Player player) {
         String host = System.getProperty(HOST_PROPERTY, "");
         if (host.isBlank()) {
@@ -206,7 +198,7 @@ public final class BetterModelPackServer {
     }
 
     /**
-     * Local URL for BetterModel's server-side texture reader.
+     * local URL for BetterModel's server-side texture reader
      */
     public static @NotNull URI getDefaultSkinUri(@NotNull String path) {
         HttpServer http = server;
@@ -216,21 +208,6 @@ public final class BetterModelPackServer {
             if (host.contains(":")) host = "[" + host + "]";
         }
         return URI.create("http://" + host + ":" + getPort() + "/bettermodel-skins/" + path);
-    }
-
-    public static byte @Nullable [] getZipBytes() {
-        CompiledPack current = compiledPack;
-        return current != null ? current.bytes() : null;
-    }
-
-    public static @Nullable String getSha1Hash() {
-        CompiledPack current = compiledPack;
-        return current != null ? current.hash() : null;
-    }
-
-    public static @Nullable UUID getPackId() {
-        CompiledPack current = compiledPack;
-        return current != null ? current.id() : null;
     }
 
     private static @NotNull String calculateSha1(byte[] data) {
@@ -248,7 +225,7 @@ public final class BetterModelPackServer {
     private static class DefaultSkinHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            try {
+            try (exchange) {
                 String method = exchange.getRequestMethod();
                 if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
                     exchange.sendResponseHeaders(405, -1);
@@ -274,8 +251,6 @@ public final class BetterModelPackServer {
                     exchange.sendResponseHeaders(200, bytes.length);
                     exchange.getResponseBody().write(bytes);
                 }
-            } finally {
-                exchange.close();
             }
         }
     }

@@ -1,12 +1,12 @@
 #ifndef ERIS_TIMER
 #define ERIS_TIMER
 
-// Case timer screen pixels are written by item.fsh with R = 250 and a 16-bit payload in G/B.
-// Pixels are interleaved in a checkerboard:
-//   - even pixels ((x + y) % 2 == 0) pack (u10 << 6) | seconds
-//   - odd pixels  ((x + y) % 2 == 1) pack (v8  << 8) | (strikes << 6) | minutes
-// Any direct neighbour has the opposite parity, so one neighbour fetch recovers the screen UV,
-// the MM:SS timer readout, and the active strike count (0..3) without off-screen metadata rows.
+// case timer screen pixels are written by item.fsh with R = 250 and a 16-bit payload in G/B
+// pixels are interleaved in a checkerboard:
+// - even pixels ((x + y) % 2 == 0) pack (u10 << 6) | seconds
+// - odd pixels  ((x + y) % 2 == 1) pack (v8  << 8) | (strikes << 6) | minutes
+// any direct neighbour has the opposite parity, so one neighbour fetch recovers the screen UV,
+// the MM:SS timer readout, and the active strike count (0..3) without off-screen metadata rows
 
 bool readTimerPixel(sampler2D tex, ivec2 pixel, out int payload) {
     ivec3 raw = ivec3(round(texelFetch(tex, pixel, 0).rgb * 255.0));

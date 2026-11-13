@@ -28,7 +28,7 @@ layout(location = 2) out vec4 vertexColor;
 layout(location = 3) out vec2 texCoord0;
 
 // @formatter:off
-#include <eris:text/vertex/import.glsl>
+#include <eris:text/vertex.glsl>
 // @formatter:on
 
 void main() {
@@ -43,7 +43,8 @@ void main() {
     #endif
     texCoord0 = UV0;
 
-    // @formatter:off
-    #include <eris:text/vertex/patch.glsl>
-    // @formatter:on
+    #ifdef IS_GUI
+    gl_Position = applyTextEffectVertex(gl_Position);
+    gl_Position = applyNotificationVertex(gl_Position);
+    #endif
 }

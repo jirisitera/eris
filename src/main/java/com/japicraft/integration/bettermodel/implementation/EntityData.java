@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import net.minestom.server.entity.Metadata;
 import net.minestom.server.entity.MetadataDef;

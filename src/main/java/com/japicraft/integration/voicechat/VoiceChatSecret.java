@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;

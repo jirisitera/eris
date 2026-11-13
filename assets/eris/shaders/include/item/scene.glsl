@@ -1,11 +1,9 @@
 #ifndef ERIS_PBR_SCENE_GLSL
 #define ERIS_PBR_SCENE_GLSL
 
-// Camera room positions / world offsets
 #define CAMERA_OFFSET_NORTH vec3(0.5, 2.8, 2.0)
 #define CAMERA_OFFSET_SOUTH vec3(0.5, 2.8, 5.0)
 
-// Primary spotlights
 #define SPOTLIGHT_COUNT 4
 
 const vec3 SPOTLIGHT_POSITIONS[SPOTLIGHT_COUNT] = vec3[](
@@ -29,7 +27,7 @@ const vec3 SPOTLIGHT_COLORS[SPOTLIGHT_COUNT] = vec3[](
     vec3(8.0, 9.0, 12.0)
 );
 
-// Inner and outer cone cutoff cosines (cosOuter, cosInner)
+// inner and outer cone cutoff cosines (cosOuter, cosInner)
 const vec2 SPOTLIGHT_CUTOFFS[SPOTLIGHT_COUNT] = vec2[](
     vec2(0.89101, 0.96126),
     vec2(0.97815, 0.99452),
@@ -37,7 +35,6 @@ const vec2 SPOTLIGHT_CUTOFFS[SPOTLIGHT_COUNT] = vec2[](
     vec2(0.98163, 0.99619)
 );
 
-// Secondary / auxiliary scene lights
 #define AUX_LIGHT_COUNT 4
 #define AUX_LIGHT_RADIUS 0.7
 
@@ -64,7 +61,6 @@ const vec2 AUX_LIGHT_CUTOFFS[AUX_LIGHT_COUNT] = vec2[](
     vec2(0.4311, 0.4311)
 );
 
-// Ambient light probe locations
 #define AMBIENT_PROBE_COUNT 8
 #define AMBIENT_PROBE_RADIUS 1.6
 

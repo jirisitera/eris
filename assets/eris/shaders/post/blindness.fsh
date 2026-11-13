@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // @formatter:off
-#include <eris:ui_data.glsl>
+#include <eris:post/ui_data.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
@@ -24,7 +24,7 @@ float depthAt(ivec2 pixel, ivec2 size) {
 }
 
 float crease(float before, float center, float after) {
-    // Raw reversed depth is affine across a face. Reject its slope, keep corners.
+    // corner detection from reversed-depth curvature, independent of face slope
     float curvature = abs(before + after - 2.0 * center);
     float slope = abs(before - center) + abs(after - center);
     float localDepth = max(center, max(before, after));
@@ -42,7 +42,7 @@ float lightAt(ivec2 pixel, ivec2 size) {
 }
 
 vec3 visibleSignal(vec3 color) {
-    // Only retain nearly full-brightness, strongly saturated red/yellow signals.
+    // near-full-brightness saturated red/yellow signals only
     float red = max(color.r, 0.0001);
     float greenRatio = color.g / red;
     float blueRatio = color.b / red;
@@ -52,7 +52,7 @@ vec3 visibleSignal(vec3 color) {
     * (1.0 - smoothstep(1.05, 1.12, greenRatio))
     * smoothstep(0.75, 0.90, color.g) * lowBlue;
     float brightness = smoothstep(0.85, 0.97, color.r);
-    // Output only canonical red/yellow, never the rest of the scene's palette.
+    // canonical red/yellow output only
     return vec3(1.0, 0.0, 0.0) * redMask * brightness
     + vec3(1.0, 1.0, 0.0) * yellowMask * brightness;
 }
@@ -72,7 +72,7 @@ void main() {
     shape = max(shape, crease(depthAt(pixel - dx + dy, size), center, depthAt(pixel + dx - dy, size)));
     if (pixel.x < 1 || pixel.y < 1 || pixel.x >= size.x - 1 || pixel.y >= size.y - 1) shape = 0.0;
 
-    // Retain crisp texture/panel outlines too: depth alone cannot show flat digits.
+    // texture outlines for flat digits absent from depth edges
     float light = lightAt(pixel, size);
     float contrast = max(max(abs(lightAt(pixel - dx, size) - light), abs(lightAt(pixel + dx, size) - light)),
         max(abs(lightAt(pixel - dy, size) - light), abs(lightAt(pixel + dy, size) - light)));

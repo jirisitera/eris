@@ -25,14 +25,16 @@ vec4 calculateFinalColor(vec4 color) {
     return apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogColor);
 }
 
+// @formatter:off
+#include <eris:lines/fragment.glsl>
+// @formatter:on
+
 void main() {
     vec4 color = vertexColor * ColorModulator;
     #ifdef OIT_ALPHA_ONLY
     executeAlphaOnlyPhase(gl_FragCoord.z, color.a);
     #else
-    // @formatter:off
-    #include <eris:lines.glsl>
-    // @formatter:on
+    color = applyLineColor(color);
     fragColor = calculateFinalColor(color);
     #endif
 }

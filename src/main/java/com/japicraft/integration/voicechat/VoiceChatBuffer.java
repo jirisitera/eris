@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;

@@ -1,11 +1,11 @@
 package com.japicraft.emote;
 
-import com.japicraft.bettermodel.MinestomAdapter;
-import com.japicraft.bettermodel.impl.MinestomPlayerModels;
 import com.japicraft.camera.CameraAnchor;
-import com.japicraft.environment.AnimationManager;
-import com.japicraft.environment.GameStageManager;
 import com.japicraft.environment.InstanceManager;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.implementation.MinestomPlayerModels;
+import com.japicraft.service.AnimationService;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.data.blueprint.BlueprintAnimation;
 import kr.toxicity.model.api.data.renderer.ModelRenderer;
@@ -17,7 +17,6 @@ import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-
 public class EmoteManager {
     public static final float DEFAULT_Y_OFFSET = CameraAnchor.CAMERA_HEIGHT + 1.1F;
     public static final Tag<Float> BODY_YAW_TAG = Tag.Transient("emoteBodyYaw");
@@ -27,7 +26,7 @@ public class EmoteManager {
     }
 
     /**
-     * Model-local translation: lobby avatars are visual-only, independent of the real players.
+     * model-local translation: lobby avatars are visual-only, independent of the real players
      */
     public static Vector3f modelOffset(Player player) {
         Vector3f offset = new Vector3f(0, -getYOffset(player), 0);
@@ -36,7 +35,7 @@ public class EmoteManager {
             var body = CameraAnchor.bodyPosition(player);
             offset.add((float) (seat.x() - body.x()),
                 (float) (seat.y() + CameraAnchor.CAMERA_HEIGHT - body.y()), (float) (seat.z() - body.z()));
-            // Display entities rotate their translation by -yaw; convert the world offset to local space.
+            // world-to-local offset conversion for display translation rotated by -yaw
             offset.rotateY((float) Math.toRadians(seat.yaw()));
         }
         return offset;
@@ -44,7 +43,22 @@ public class EmoteManager {
 
     public static void stop(Player player) {
         player.removeTag(BODY_YAW_TAG);
-        AnimationManager.stop(player);
+        AnimationService.stop(player);
+    }
+
+    /**
+     * rebuild cached bone transforms after the stage changes the avatar's offset
+     */
+    public static void resetPose(Player player, String targetLimb, String animName) {
+        ModelRenderer limb = BetterModel.limb(targetLimb).orElse(null);
+        if (limb == null || limb.animation(animName).isEmpty()) return;
+        var registry = BetterModel.registryOrNull(player.getUuid());
+        if (registry != null) {
+            EntityTracker previous = registry.tracker(limb.name());
+            if (previous != null) previous.close();
+        }
+        // Keep the stage's body yaw, assigned by CameraAnchor.attach.
+        play(player, targetLimb, animName);
     }
 
     public static void play(Player player, String targetLimb, String animName) {
@@ -64,7 +78,6 @@ public class EmoteManager {
             player.setTag(BODY_YAW_TAG, fixedYaw);
         }
 
-        // Re-use or obtain tracker WITHOUT closing the registry
         EntityTracker tracker = MinestomPlayerModels.getOrCreate(selectedLimb,
             MinestomAdapter.adapt(player),
             TrackerModifier.DEFAULT,
@@ -73,10 +86,15 @@ public class EmoteManager {
                 applyValues(player, created);
             }
         );
-        // Ensure defaultPosition and bodyRotator settings are applied to existing or newly created tracker
+
         applyValues(player, tracker);
 
-        AnimationManager.animate(tracker, selectedLimb, selectedAnim, () -> {
+        if ("standing".equalsIgnoreCase(animName) || "idle".equalsIgnoreCase(animName)) {
+            AnimationService.animateBasePose(tracker, selectedLimb, selectedAnim);
+            return;
+        }
+
+        AnimationService.animate(tracker, selectedLimb, selectedAnim, () -> {
             player.removeTag(BODY_YAW_TAG);
             tracker.close();
         });

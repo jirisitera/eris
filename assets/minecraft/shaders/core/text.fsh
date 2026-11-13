@@ -44,7 +44,7 @@ vec4 calculateFinalColor(vec4 color) {
 }
 
 // @formatter:off
-#include <eris:text/fragment/import.glsl>
+#include <eris:text/fragment.glsl>
 // @formatter:on
 
 void main() {
@@ -56,6 +56,11 @@ void main() {
 
     vec4 color = texColor * vertexColor * ColorModulator;
 
+    #ifdef IS_GUI
+    color = applyNotificationFragment(color);
+    color = applyTextEffectFragment(texColor, color);
+    #endif
+
     if (color.a < 0.1) {
         discard;
     }
@@ -65,8 +70,4 @@ void main() {
     #else
     fragColor = calculateFinalColor(color);
     #endif
-
-    // @formatter:off
-    #include <eris:text/fragment/patch.glsl>
-    // @formatter:on
 }

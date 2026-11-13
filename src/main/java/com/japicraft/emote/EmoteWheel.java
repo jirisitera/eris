@@ -3,21 +3,22 @@ package com.japicraft.emote;
 import com.japicraft.camera.BombView;
 import com.japicraft.camera.ClientView;
 import com.japicraft.camera.CursorProbe;
-import com.japicraft.environment.GameStageManager;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.service.NotificationService;
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
 
 public final class EmoteWheel {
     public static final int EMOTE_COUNT = 8;
-    // Logical wheel cursor aspect, shared with emote_wheel.glsl. The shader maps
-    // cursor X to the actual viewport, so selection never needs client dimensions.
+    // logical wheel cursor aspect shared with post/emotes.glsl
+    // viewport mapping in the shader, independent of client dimensions on the server
     private static final float CURSOR_REFERENCE_ASPECT = 16.0F / 9.0F;
     private static final float CENTER_DEADZONE = 0.12F;
     private static final Tag<Boolean> OPEN_TAG = Tag.Transient("emoteWheelOpen");
     private static final Tag<ClientView.CursorPosition> CURSOR_TAG = Tag.Transient("emoteWheelCursor");
     private static final Tag<ClientView.CursorPosition> RESTORE_TAG = Tag.Transient("emoteWheelCursorRestore");
 
-    // Returns 0..7 clockwise from top (12 o'clock), or -1 inside the center deadzone
+    // slice 0..7 clockwise from 12 o'clock, or -1 inside the center deadzone
     public static int hoveredSlice(Player player) {
         if (BombView.isActive(player)) return -1;
         CursorProbe.ScreenPosition cursor = CursorProbe.screenPosition(player);
@@ -51,6 +52,19 @@ public final class EmoteWheel {
         CursorProbe.update(player);
     }
 
+    public static void perform(Player player, int emoteId) {
+        switch (emoteId) {
+            case 0 -> EmoteManager.play(player, "steve", "wave");
+            case 1 -> EmoteManager.play(player, "steve", "roll");
+            default -> {
+                EmoteWheel.close(player);
+                return;
+            }
+        }
+        NotificationService.info(player, "Selected emote " + emoteId + ".");
+        EmoteWheel.close(player);
+    }
+
     public static void close(Player player) {
         if (!isOpen(player)) {
             return;
@@ -62,7 +76,7 @@ public final class EmoteWheel {
             var restore = new ClientView.CursorPosition(cursor.yaw(), cursor.pitch());
             player.setTag(RESTORE_TAG, restore);
             player.scheduler().scheduleNextTick(() -> {
-                // Reopening, closing again, or disconnecting invalidates this restoration.
+                // restoration invalidated by reopening, closing or disconnecting
                 if (player.getTag(RESTORE_TAG) != restore) {
                     return;
                 }
@@ -91,7 +105,7 @@ public final class EmoteWheel {
         ClientView.CursorPosition saved = player.getTag(CURSOR_TAG);
         if (saved == null) saved = player.getTag(RESTORE_TAG);
         if (saved == null) saved = ClientView.cursorPosition(player);
-        detach(player); // Also invalidates any scheduled wheel cursor restoration.
+        detach(player); // scheduled wheel cursor restoration invalidation
         return saved;
     }
 }

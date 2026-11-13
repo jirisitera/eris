@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Instance-owned assembly and input routing; reconnecting players share the same puzzle.
+ * instance-owned puzzle assembly and input shared by reconnecting players
  */
 public final class BombModules implements AutoCloseable {
     private static final Tag<BombModules> TAG = Tag.Transient("bombModules");
@@ -72,10 +72,6 @@ public final class BombModules implements AutoCloseable {
     public synchronized void reset() {
         active = false;
         modules.forEach(mounted -> mounted.module.reset(mounted.definition.get()));
-    }
-
-    public synchronized boolean solved() {
-        return !modules.isEmpty() && modules.stream().allMatch(mounted -> mounted.module.solved());
     }
 
     public synchronized int solvedCount() {

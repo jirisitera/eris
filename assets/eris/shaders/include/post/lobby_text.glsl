@@ -1,5 +1,5 @@
-// Lobby coordinates are normalized from the top-left, shared with LobbyUi.java.
-// The existing effect font is reused, so labels stay independent of Minecraft GUI scale.
+// normalized top-left lobby coordinates shared with LobbyInterface.java
+// effect font labels independent of GUI scale
 const int LOBBY_TEXT_OFFSETS[10] = int[](0, 16, 28, 41, 55, 60, 72, 94, 113, 121);
 const int LOBBY_TEXT_LENGTHS[10] = int[](16, 12, 13, 14, 5, 12, 22, 19, 8, 13);
 const int LOBBY_GLYPHS[134] = int[](
@@ -46,12 +46,11 @@ vec3 lobbyButton(vec3 scene, vec2 point, vec2 cursor, vec4 bounds, vec2 screenSi
     fill = mix(fill, selected || hovered ? accent : vec3(0.24, 0.30, 0.39), border);
     float ink;
     if (label < 0) {
-        // Negative labels draw left/right chevrons without depending on font glyphs.
+        // left/right chevrons from negative labels, independent of font glyphs
         vec2 arrow = (point - (bounds.xy + bounds.zw) * 0.5) / 0.014;
         arrow.x *= screenSize.x / screenSize.y;
         float direction = label == -1 ? -1.0 : 1.0;
-        ink = (1.0 - step(0.16, abs(arrow.x - direction * (0.5 - abs(arrow.y)))))
-            * (1.0 - step(1.0, abs(arrow.y)));
+        ink = (1.0 - step(0.16, abs(arrow.x - direction * (0.5 - abs(arrow.y))))) * (1.0 - step(1.0, abs(arrow.y)));
     } else {
         ink = lobbyText(point, (bounds.xy + bounds.zw) * 0.5, 0.026, bounds.z - bounds.x - 0.025,
             screenSize.x / screenSize.y, label);

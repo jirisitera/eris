@@ -5,13 +5,13 @@ import com.japicraft.environment.StructureLoader;
 import net.minestom.server.coordinate.Pos;
 
 /**
- * The same corners and cursor footprint used by surface_cursor.json and cursor.fsh.
+ * shared corners and cursor footprint with surface_cursor.json and cursor.fsh
  */
 public final class Surface {
     public static final double WIDTH = 0.75, DEPTH = 0.5, CURSOR_SIZE = 0.08;
 
     /**
-     * Mouse position denotes the cursor texture's top-left corner, exactly as in the shader.
+     * mouse position at the cursor texture's top-left, matching the shader
      */
     public static Point cursor(double x, double y) {
         return new Point(Math.clamp(x, 0, 1) * (1 - CURSOR_SIZE / WIDTH * 2 / 32),
@@ -19,8 +19,8 @@ public final class Surface {
     }
 
     public static Pos world(Point point, double elevation) {
-        // Item displays rotate their models 180 degrees around Y before rendering.
-        // The shader's probe corners therefore run from +X/+Z towards -X/-Z.
+        // 180-degree item model rotation around Y before rendering
+        // shader probe corner order from +X/+Z towards -X/-Z
         return StructureLoader.CASE_SPAWN.add((0.5 - point.u) * WIDTH,
             BombView.SURFACE_HEIGHT + elevation, (0.5 - point.v) * DEPTH).withView(0, 0);
     }

@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomPlayer;
+import com.japicraft.integration.bettermodel.MinestomPlayer;
 import kr.toxicity.model.api.manager.PlayerManager;
 import kr.toxicity.model.api.nms.PlayerChannelHandler;
 import kr.toxicity.model.api.pack.PackZipper;

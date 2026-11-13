@@ -1,4 +1,4 @@
-// Shared item vertex implementation for lit and unlit platform pipelines.
+// shared item vertices for lit and unlit platform pipelines
 // @formatter:off
 #ifndef ERIS_UNLIT
 #include <minecraft:light.glsl>
@@ -66,7 +66,7 @@ void main() {
     const vec2 QUAD_UVS[4] = vec2[](vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0), vec2(1.0, 0.0));
     faceUv = QUAD_UVS[gl_VertexIndex % 4];
 
-    // Bones carrying the timer tint (minutes, 253, seconds) keep neutral lighting on non-timer faces
+    // bones carrying the timer tint (minutes, 253, seconds) keep neutral lighting on non-timer faces
     vec4 shadeColor = vertexTag.g == TIMER_TAG_G ? vec4(1.0, 1.0, 1.0, Color.a) : Color;
 
     if (customTexCoord.x >= 0.0) {
@@ -76,9 +76,8 @@ void main() {
     vec2 texelPos = UV0 * vec2(textureSize(Sampler0, 0));
     ivec4 texelTag = ivec4(round(texelFetch(Sampler0, ivec2(texelPos), 0) * 255.0));
 
-    // Cursor probe data pixel encoding
     if (texelTag.r == 252 && texelTag.g == 99 && texelTag.b == 7 && vertexTag.g == 125) {
-        // Project four fixed world corners into eight metadata pixels, never over the case.
+        // four projected world corners stored in eight metadata pixels
         vec4 projected = gl_Position;
         vec2 screen = projected.xy / projected.w;
         ivec2 encodedScreen = ivec2(round(clamp((screen + 4.0) / 8.0, 0.0, 1.0) * 65535.0));
@@ -97,7 +96,7 @@ void main() {
         pbrMark = PBR_MARK_CURSOR_DATA;
     }
 
-    // Case timer screen encoding (timer.png texels are tagged with R=252, G=100, B=(y<<4)|x, A=255)
+    // case timer screen encoding (timer.png texels are tagged with R=252, G=100, B=(y<<4)|x, A=255)
     if (texelTag.r == 252 && texelTag.g == 100 && texelTag.a == 255) {
         vec2 rawUv = vec2(float(texelTag.b & 15), float(texelTag.b >> 4)) / 15.0;
         faceUv = 1.0 - rawUv;
@@ -108,7 +107,6 @@ void main() {
         pbrMark = PBR_MARK_TIMER;
     }
 
-    // Floating dust particles within the spotlight beam
     if (vertexTag.g == 254 && vertexTag.b == 6) {
         vec3 noiseSample = texelFetch(Sampler0, ivec2(UV0 * vec2(textureSize(Sampler0, 0))), 0).rgb;
         float time = GameTime * 1200.0;

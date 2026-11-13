@@ -2,12 +2,11 @@
 #define ERIS_PBR_GLSL
 
 // @formatter:off
-#include <eris:pbr_scene.glsl>
+#include <eris:item/scene.glsl>
 // @formatter:on
 
 const float PI = 3.14159265;
 
-// Camera world offset based on view orientation
 vec3 getCameraWorldOffset() {
     float viewForwardZ = -ModelViewMat[2][2];
     return viewForwardZ > 0.0
@@ -15,7 +14,6 @@ vec3 getCameraWorldOffset() {
     : CAMERA_OFFSET_SOUTH;
 }
 
-// Color space conversions
 vec3 srgbToLinear(vec3 color) {
     return pow(color, vec3(2.2));
 }
@@ -24,7 +22,7 @@ vec3 linearToSrgb(vec3 color) {
     return pow(clamp(color, 0.0, 1.0), vec3(1.0 / 2.2));
 }
 
-// Cotangent frame (TBN matrix) reconstruction from derivatives
+// cotangent frame (TBN matrix) reconstruction from derivatives
 mat3 calculateTBN(vec3 normal, vec3 pos, vec2 uv) {
     vec3 dp1 = dFdx(pos);
     vec3 dp2 = dFdy(pos);
@@ -38,19 +36,19 @@ mat3 calculateTBN(vec3 normal, vec3 pos, vec2 uv) {
     return mat3(tangent * invMax, bitangent * invMax, normal);
 }
 
-// Global parameters for optional wrap/rim lighting
+// global parameters for optional wrap/rim lighting
 float gDiffuseWrap = 0.0;
 float gRimIntensity = 0.0;
 vec3 gRimAxis = vec3(0.0, 1.0, 0.0);
 
-// GGX / Trowbridge-Reitz Normal Distribution Function (NDF)
+// normal distribution: GGX / Trowbridge-Reitz
 float distributionGGX(float NdotH, float roughnessSq) {
     float alphaSq = roughnessSq * roughnessSq;
     float denom = NdotH * NdotH * (alphaSq - 1.0) + 1.0;
     return alphaSq / (PI * denom * denom);
 }
 
-// Schlick-GGX Geometric Shadowing Function (Smith's method)
+// geometric shadowing: Schlick-GGX with Smith's method
 float geometrySmith(float NdotV, float NdotL, float roughness) {
     float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
     float gV = NdotV / (NdotV * (1.0 - k) + k);
@@ -58,18 +56,16 @@ float geometrySmith(float NdotV, float NdotL, float roughness) {
     return gV * gL;
 }
 
-// Fresnel-Schlick approximation
+// reflectance approximation: Fresnel-Schlick
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-// Ambient sky lighting based on direction and roughness
 vec3 sampleAmbientSky(vec3 dir, float roughness) {
     float upwardFactor = smoothstep(mix(0.97, 0.6, roughness), 1.0, dir.y);
     return vec3(0.025, 0.022, 0.018) * upwardFactor * (1.0 - roughness);
 }
 
-// Cook-Torrance point light calculation
 vec3 calculatePointLight(
     vec3 normal,
     vec3 viewDir,
@@ -91,18 +87,15 @@ vec3 calculatePointLight(
     float NdotH = max(dot(normal, halfDir), 0.0);
     float VdotH = max(dot(viewDir, halfDir), 0.0);
 
-    // Specular BRDF
     vec3 F = fresnelSchlick(VdotH, F0);
     float D = distributionGGX(NdotH, roughness * roughness);
     float G = geometrySmith(NdotV, NdotL, roughness);
     vec3 specular = (D * G * F) / (4.0 * NdotV * max(NdotL, 1e-4));
 
-    // Diffuse energy conservation
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
     float wrappedNdotL = max((dot(normal, lightDir) + gDiffuseWrap) / (1.0 + gDiffuseWrap), 0.0);
     vec3 diffuse = kD * albedo / PI * wrappedNdotL;
 
-    // Rim / backlight contribution
     float backlightFacing = smoothstep(-0.2, 0.5, dot(-viewDir, lightDir));
     float rimAngle = max(dot(gRimAxis, viewDir), 1e-4);
     float rimFactor = pow(1.0 - rimAngle, 2.2) * backlightFacing * smoothstep(-0.3, 0.2, dot(gRimAxis, lightDir) + 0.3);
@@ -112,7 +105,6 @@ vec3 calculatePointLight(
     return (diffuse + specular * NdotL + rimColor) * lightColor * attenuation;
 }
 
-// Spotlight calculation with smooth cone falloff
 vec3 calculateSpotlight(
     vec3 normal,
     vec3 viewDir,
@@ -133,7 +125,7 @@ vec3 calculateSpotlight(
     : calculatePointLight(normal, viewDir, fragPos, lightPos, lightColor * spotlightIntensity, albedo, roughness, metallic, F0);
 }
 
-// Subtle procedural light flicker (hum + occasional dips)
+// subtle procedural light flicker (hum + occasional dips)
 float calculateLightFlicker(float timeSeconds) {
     float timeTicks = timeSeconds * 1200.0;
     float continuousHum = 0.99 + 0.01 * sin(timeTicks * 23.0) * sin(timeTicks * 7.3);
@@ -142,7 +134,6 @@ float calculateLightFlicker(float timeSeconds) {
     return continuousHum * randomDip;
 }
 
-// Main PBR shading pass
 vec3 shadePBR(vec3 albedo, vec3 normal, float roughness, float metallic, float aoFactor, vec3 viewPos) {
     vec3 viewDir = normalize(-viewPos);
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -166,7 +157,6 @@ vec3 shadePBR(vec3 albedo, vec3 normal, float roughness, float metallic, float a
         );
     }
 
-    // Ambient irradiance & reflections
     float NdotV = max(dot(normal, viewDir), 0.0);
     vec3 fresnelRoughness = F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - NdotV, 5.0);
     vec3 ambientDiffuse = sampleAmbientSky(normal, 1.0) * albedo * (1.0 - metallic) * (1.0 - fresnelRoughness);
@@ -174,13 +164,12 @@ vec3 shadePBR(vec3 albedo, vec3 normal, float roughness, float metallic, float a
     vec3 ambient = ambientDiffuse + ambientSpecular;
     totalRadiance += ambient * aoFactor;
 
-    // Reinhard tonemapping and contrast adjustment
     totalRadiance = totalRadiance / (1.0 + totalRadiance);
     totalRadiance = pow(totalRadiance, vec3(1.35));
     return linearToSrgb(totalRadiance);
 }
 
-// Shading with packed material atlas (Normal map + Roughness/Metallic/AO map)
+// shading with packed material atlas (Normal map + Roughness/Metallic/AO map)
 vec3 shadePackedPBR(sampler2D atlasSampler, vec2 uv, float atlasSubpixelOffset, vec3 viewPos, vec3 geomNormal) {
     vec2 uvOffset = atlasSubpixelOffset / vec2(textureSize(atlasSampler, 0));
     vec3 albedo = srgbToLinear(texture(atlasSampler, uv).rgb);
@@ -197,7 +186,7 @@ vec3 shadePackedPBR(sampler2D atlasSampler, vec2 uv, float atlasSubpixelOffset, 
     return shadePBR(albedo, normal, roughness, metallic, ao, viewPos);
 }
 
-// Shading for beveled/cushioned surfaces with custom face UVs
+// shading for beveled/cushioned surfaces with custom face UVs
 vec3 shadeBeveledSurface(sampler2D atlasSampler, vec2 uv, vec3 viewPos, vec3 geomNormal, vec2 faceUv) {
     vec3 albedo = srgbToLinear(texture(atlasSampler, uv).rgb);
     vec2 centeredFaceUv = faceUv * 2.0 - 1.0;
@@ -215,7 +204,6 @@ vec3 shadeBeveledSurface(sampler2D atlasSampler, vec2 uv, vec3 viewPos, vec3 geo
     return result;
 }
 
-// Flat PBR shading without normal mapping
 vec3 shadeFlatPBR(sampler2D atlasSampler, vec2 uv, vec3 viewPos, vec3 geomNormal) {
     vec3 albedo = srgbToLinear(texture(atlasSampler, uv).rgb);
     vec3 normal = dot(geomNormal, viewPos) > 0.0 ? -geomNormal : geomNormal;

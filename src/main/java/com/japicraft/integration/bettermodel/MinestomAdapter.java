@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel;
+package com.japicraft.integration.bettermodel;
 
 import kr.toxicity.model.api.platform.*;
 import net.minestom.server.MinecraftServer;
@@ -99,8 +99,6 @@ public final class MinestomAdapter implements PlatformAdapter {
     public @NotNull PlatformLocation zero() {
         return new MinestomLocation(null, 0.0, 0.0, 0.0, 0.0f, 0.0f);
     }
-
-    // --- Embedded Platform Implementations ---
 
     public record MinestomEntity(@NotNull Entity source) implements PlatformEntity {
         @Override

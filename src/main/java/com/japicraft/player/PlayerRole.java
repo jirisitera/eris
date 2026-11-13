@@ -1,4 +1,4 @@
-package com.japicraft.environment;
+package com.japicraft.player;
 
 import net.minestom.server.entity.Player;
 import net.minestom.server.tag.Tag;
@@ -8,7 +8,7 @@ public enum PlayerRole {
     MANUAL_EXPERT("Expert s manuálem (hluchý)"),
     DEFUSAL_HELPER("Komunikátor (němý)");
 
-    static final Tag<PlayerRole> TAG = Tag.Transient("instanceRole");
+    public static final Tag<PlayerRole> TAG = Tag.Transient("instanceRole");
     private final String displayName;
 
     PlayerRole(String displayName) {

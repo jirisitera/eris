@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.entity.BaseEntity;
 import kr.toxicity.model.api.nms.DisplayTransformer;

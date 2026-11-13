@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // @formatter:off
-#include <eris:timer.glsl>
+#include <eris:post/timer.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
@@ -15,8 +15,8 @@ layout(std140) uniform BloomConfig {
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
-// Sample bloom input: extracts bright highlights in the first pass (Bright >= 0.5),
-// or samples the intermediate blurred texture in the second pass (Bright < 0.5).
+// sample bloom input: extracts bright highlights in the first pass (Bright >= 0.5),
+// or samples the intermediate blurred texture in the second pass (Bright < 0.5)
 vec3 sampleBloomHighlight(vec2 uv) {
     if (Bright < 0.5) {
         return texture(InSampler, uv).rgb;
@@ -25,7 +25,7 @@ vec3 sampleBloomHighlight(vec2 uv) {
     ivec2 imageSize = textureSize(InSampler, 0);
     ivec2 pixelCoord = clamp(ivec2(uv * vec2(imageSize)), ivec2(0), imageSize - 1);
 
-    // Exclude UI data rows (reserved for CPU-GPU metadata communication) from bloom
+    // exclude UI data rows (reserved for CPU-GPU metadata communication) from bloom
     if (pixelCoord.y >= 14 && pixelCoord.y <= 21 && pixelCoord.x < 48) {
         return vec3(0.0);
     }
@@ -35,7 +35,7 @@ vec3 sampleBloomHighlight(vec2 uv) {
     float maxChannel = max(color.r, max(color.g, color.b));
     float minChannel = min(color.r, min(color.g, color.b));
 
-    // Case timer screen LED glow (red channel 250)
+    // case timer screen LED glow (red channel 250)
     if (rgb255.r == 250) {
         vec2 timerUv;
         int timerMinutes;
@@ -49,8 +49,8 @@ vec3 sampleBloomHighlight(vec2 uv) {
         return vec3(0.55, 0.40, 0.08) * glow;
     }
 
-    // Smooth thresholds avoid flashes when ordinary shaded colors cross RGB parity
-    // or the neutral-color boundary. Timer emission is handled explicitly above.
+    // smooth thresholds avoid flashes when ordinary shaded colors cross RGB parity
+    // or the neutral-color boundary. Timer emission is handled explicitly above
     float neutrality = 1.0 - smoothstep(0.15, 0.25,
         (maxChannel - minChannel) / max(maxChannel, 0.0001));
     float bloomWeight = smoothstep(0.55, 0.85, maxChannel) * neutrality;

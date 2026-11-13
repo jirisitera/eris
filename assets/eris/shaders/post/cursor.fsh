@@ -2,15 +2,17 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // @formatter:off
-#include <eris:emote_wheel.glsl>
-#include <eris:ui_data.glsl>
+#include <eris:post/emotes.glsl>
+#include <eris:post/ui_data.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
 uniform sampler2D CursorSampler;
 uniform sampler2D FontSampler;
 
-#include <eris:lobby.glsl>
+// @formatter:off
+#include <eris:post/lobby_text.glsl>
+// @formatter:on
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
@@ -18,7 +20,7 @@ layout(location = 0) out vec4 fragColor;
 const int PLAYER_LOOK_ROW_Y = 16;
 const int CURSOR_PROBE_ROW_Y = 19;
 const ivec3 ACTIVE_MARKER = ivec3(91, 126, 209);
-// Radius in world blocks on the bomb surface, independent of FOV and resolution.
+// reveal radius in world blocks, independent of FOV and resolution
 const float SURFACE_REVEAL_RADIUS = 0.12;
 
 vec2 decodeAngles(ivec2 pixel0, ivec2 pixel1, float yawRange, float pitchRange) {
@@ -41,8 +43,8 @@ bool getLookAngles(out vec2 lookAngles) {
     vec2 mouseLook = decodeAngles(ivec2(0, CURSOR_PROBE_ROW_Y), ivec2(1, CURSOR_PROBE_ROW_Y), 360.0, 360.0);
     ivec3 mode = ivec3(round(texelFetch(InSampler, ivec2(6, CURSOR_PROBE_ROW_Y), 0).rgb * 255.0));
     if (mode.g == 255) {
-        // Corrections and their probe arrive together, but the raw overlay can still
-        // contain the previous frame's angles. Never predict across that discontinuity.
+        // bundled correction/probe delivery with potentially stale raw overlay angles
+
         lookAngles = mouseLook;
         return true;
     }
@@ -57,14 +59,11 @@ bool getLookAngles(out vec2 lookAngles) {
     vec2 delta = vec2(mod(rawLook.x - serverLook.x + 720.0, 1440.0) - 720.0,
         rawLook.y - serverLook.y);
     float limit = mode.r == 255 ? 35.0 : 90.0;
-    // Edge overscroll must not re-enter the canvas when a raw angle wraps. Pin
-    // each saturated axis until server input confirms movement back into bounds.
-    // Large gaps are ambiguous/stale; let the next probe resolve them instead.
+    // Keep inward movement responsive at either edge, including during overscroll.
+    // Native pitch recentering may still produce artifacts beyond the edge.
     for (int axis = 0; axis < 2; axis++) {
-        if (abs(mouseLook[axis]) >= limit - 0.01 || abs(delta[axis]) > 90.0) {
+        if (abs(mouseLook[axis]) >= limit - 0.01 && mouseLook[axis] * delta[axis] > 0.0) {
             delta[axis] = 0.0;
-        } else {
-            delta[axis] = clamp(delta[axis], -20.0, 20.0);
         }
     }
     lookAngles = clamp(mouseLook + delta, vec2(-limit), vec2(limit));
@@ -78,9 +77,9 @@ vec2 surfaceCorner(int index) {
 }
 
 vec4 surfaceCursor(vec2 screen, vec2 look, out float visibility) {
-    // Pixels outside the projected canvas leave the scene untouched.
+    // unchanged scene outside the projected canvas
     visibility = 1.0;
-    // Recover the world plane's projective mapping without painting a canvas into the scene.
+    // projective mapping of the world plane
     for (int i = 0; i < 4; i++) {
         ivec3 tag = ivec3(round(texelFetch(InSampler, ivec2(i * 2 + 1, 20), 0).rgb * 255.0));
         if (tag.g != 91 || tag.b != 126) return vec4(0.0);
@@ -97,14 +96,14 @@ vec4 surfaceCursor(vec2 screen, vec2 look, out float visibility) {
     if (abs(determinant(projection)) < 0.000001) return vec4(0.0);
 
     vec2 size = vec2(0.08 / 0.75, 0.08 / 0.5);
-    // Match Surface.cursor: stop two cursor-texture pixels short of the right edge.
+    // two cursor-texture pixels of right-edge clearance, matching Surface.cursor
     vec2 cursor = clamp(0.5 + look / 70.0, 0.0, 1.0) * vec2(1.0 - size.x * 2.0 / 32.0, 1.0 - size.y);
     vec3 local = inverse(projection) * vec3(screen, 1.0);
     if (abs(local.z) < 0.000001) return vec4(0.0);
     vec2 uv = local.xy / local.z;
     float surfaceDistance = length((uv - cursor) * vec2(0.75, 0.5));
     float edgeWidth = max(fwidth(surfaceDistance), 0.000001);
-    // Extend the dark canvas around the surface, with less padding at the bottom.
+    // dark canvas padding, reduced at the bottom
     vec2 padding = vec2(0.0455 / 0.75, 0.085 / 0.5);
     vec2 bottomRightPadding = vec2(padding.x, -0.026 / 0.5);
     if (any(lessThan(uv, -padding)) || any(greaterThan(uv, vec2(1) + bottomRightPadding))) return vec4(0.0);
@@ -119,7 +118,7 @@ void main() {
     vec2 screenSize = vec2(textureSize(InSampler, 0));
     vec3 sceneColor = texture(InSampler, withoutUiData(InSampler, texCoord)).rgb;
 
-    // Fullscreen overlays (emote wheel first, then cursor on top)
+    // fullscreen overlays (emote wheel first, then cursor on top)
     vec2 lookAngles;
     bool surfaceMode = round(texelFetch(InSampler, ivec2(6, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 254.5;
     if (surfaceMode) {
@@ -128,16 +127,16 @@ void main() {
         if (getLookAngles(lookAngles)) {
             cursor = surfaceCursor(texCoord * 2.0 - 1.0, lookAngles, visibility);
         }
-        // Cover only the surface canvas, with a circular opening onto the existing scene.
+        // cover only the surface canvas, with a circular opening onto the existing scene
         sceneColor = mix(sceneColor * visibility, cursor.rgb, cursor.a);
     }
     if (getLookAngles(lookAngles) && !surfaceMode) {
         float aspect = screenSize.x / screenSize.y;
         bool emoteWheelOpen = round(texelFetch(InSampler, ivec2(5, CURSOR_PROBE_ROW_Y), 0).r * 255.0) > 0.5;
         vec2 cursorNdc = clamp(lookAngles / 90.0, -1.0, 1.0);
-        // Map the server's reference wheel coordinates to the actual viewport.
-        // Multiplying this cursor by aspect below now recovers exactly the same
-        // selection vector as EmoteWheel.hoveredSlice, at every window shape.
+        // server reference coordinates mapped to the viewport aspect
+        // aspect correction matching EmoteWheel.hoveredSlice
+
         if (emoteWheelOpen) cursorNdc.x *= EMOTE_WHEEL_CURSOR_ASPECT / aspect;
         vec2 cursorUv = 0.5 + cursorNdc * 0.5;
         ivec3 lobbyData = ivec3(round(texelFetch(InSampler, ivec2(7, CURSOR_PROBE_ROW_Y), 0).rgb * 255.0));

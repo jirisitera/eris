@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import kr.toxicity.model.api.scheduler.ModelScheduler;
 import kr.toxicity.model.api.scheduler.ModelTask;

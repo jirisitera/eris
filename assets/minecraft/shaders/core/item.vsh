@@ -2,5 +2,5 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // @formatter:off
-#include <eris:item_vertex.glsl>
+#include <eris:item/vertex.glsl>
 // @formatter:on

@@ -6,7 +6,7 @@
 #include <minecraft:fog.glsl>
 #include <minecraft:dynamictransforms.glsl>
 #include <minecraft:oit.glsl>
-#include <eris:pbr.glsl>
+#include <eris:item/pbr.glsl>
 // @formatter:on
 
 const int PBR_MARK_TIMER = -600;
@@ -62,7 +62,7 @@ vec4 applyVanillaFogAndLight(vec4 baseColor) {
 #endif
 
 void main() {
-    // Write cursor probe data pixels directly to frame buffer
+
     if (pbrMark == PBR_MARK_CURSOR_DATA) {
         #ifdef OIT_ALPHA_ONLY
         discard;
@@ -72,9 +72,9 @@ void main() {
         #endif
     }
 
-    // Case timer screen rendering (red channel 250 marks timer pixels).
-    // Even checkerboard pixels pack (u10 << 6) | seconds in G/B; odd pixels pack (v8 << 8) | (strikes << 6) | minutes
-    // (decoded by eris:timer.glsl in the post chain using eris:textures/effect/font.png).
+    // case timer screen rendering (red channel 250 marks timer pixels)
+    // even checkerboard pixels pack (u10 << 6) | seconds in G/B; odd pixels pack (v8 << 8) | (strikes << 6) | minutes
+    // (decoded by eris:timer.glsl in the post chain using eris:textures/effect/font.png)
     if (pbrMark == PBR_MARK_TIMER) {
         #ifdef OIT_ALPHA_ONLY
         discard;
@@ -92,7 +92,6 @@ void main() {
         #endif
     }
 
-    // Floating dust particles within the main spotlight beam
     if (pbrMark == PBR_MARK_DUST_PARTICLES) {
         #ifdef OIT_ALPHA_ONLY
         discard;
@@ -119,7 +118,6 @@ void main() {
         #endif
     }
 
-    // PBR-shaded custom models
     if (pbrMark > 0) {
         if (texture(Sampler0, texCoord0).a < 0.5) {
             discard;
@@ -133,7 +131,6 @@ void main() {
         return;
     }
 
-    // Standard Minecraft item rendering
     vec4 baseColor = texture(Sampler0, texCoord0);
     #ifdef ALPHA_CUTOUT
     if (baseColor.a < ALPHA_CUTOUT) {

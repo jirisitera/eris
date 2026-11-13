@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.pack.PackZipper;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -73,7 +73,6 @@ final class EntityManager implements GlobalManager {
     public void start() {
         this.events.setPriority(Integer.MAX_VALUE);
 
-        // State events (invisibility & jump animation)
         this.events.addListener(EntityPotionAddEvent.class, event -> {
             if (isVisibilityEffect(event.getPotion().effect())) {
                 eachTracker(event.getEntity(), EntityTracker::updateBaseEntity);
@@ -91,7 +90,6 @@ final class EntityManager implements GlobalManager {
             }
         });
 
-        // Lifecycle events
         this.events.addListener(EntitySpawnEvent.class, event -> {
             EntityTrackerRegistry registry = BetterModel.registryOrNull(MinestomAdapter.adapt(event.getEntity()));
             if (registry != null) {
@@ -125,7 +123,6 @@ final class EntityManager implements GlobalManager {
             BetterModel.platform().scheduler().asyncTask(() -> EntityTrackerRegistry.registries(each -> each.remove(platform)));
         });
 
-        // Combat events (damage & death animations)
         this.events.addListener(EntityDamageEvent.class, event -> {
             if (event.isCancelled()) {
                 return;

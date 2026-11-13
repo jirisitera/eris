@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import com.japicraft.camera.CursorProbe;
 import kr.toxicity.model.api.nms.Identifiable;
@@ -94,7 +94,7 @@ final class Packets {
     }
 
     /**
-     * Keep the owner's screen-data probe while hiding the avatar's vanilla equipment.
+     * owner screen-data probe retention while hiding vanilla equipment
      */
     static @Nullable EntityEquipmentPacket equipmentForViewer(@NotNull EntityEquipmentPacket packet,
                                                               @NotNull Player viewer, boolean hideEquipment) {
@@ -102,8 +102,8 @@ final class Packets {
         packet.equipments().forEach((slot, item) -> equipment.put(slot, hideEquipment ? ItemStack.AIR : item));
         if (packet.entityId() == viewer.getEntityId() && equipment.containsKey(EquipmentSlot.OFF_HAND)) {
             ItemStack probe = viewer.getItemInOffHand();
-            // BetterModel's delayed hide packet can already contain AIR. The authoritative
-            // offhand still has the probe, and its cached update won't resend until input changes.
+            // authoritative offhand probe restored after delayed BetterModel AIR hide packets
+            // cached probe updates otherwise delayed until input changes
             if (CursorProbe.isProbe(probe)) equipment.put(EquipmentSlot.OFF_HAND, probe);
         }
         return equipment.equals(packet.equipments()) ? null : new EntityEquipmentPacket(packet.entityId(), equipment);

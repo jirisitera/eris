@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel;
+package com.japicraft.integration.bettermodel;
 
 import kr.toxicity.model.api.platform.PlatformLocation;
 import kr.toxicity.model.api.platform.PlatformPlayer;

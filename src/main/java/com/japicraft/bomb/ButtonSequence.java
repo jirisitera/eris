@@ -3,9 +3,6 @@ package com.japicraft.bomb;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Puzzle state is independent of rendering and input, so rules can be tested on their own.
- */
 public final class ButtonSequence {
     private final List<Integer> order;
     private final int controls;

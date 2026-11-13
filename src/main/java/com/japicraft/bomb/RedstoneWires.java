@@ -33,7 +33,7 @@ public final class RedstoneWires {
         public int target() {
             if (wires.stream().filter(w -> w == Wire.BLUE).count() == 1) return wires.indexOf(Wire.BLUE);
             int red = wires.lastIndexOf(Wire.RED);
-            return red >= 0 ? red : 0;
+            return Math.max(red, 0);
         }
 
         @Override

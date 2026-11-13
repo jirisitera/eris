@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import com.japicraft.Eris;
 import de.maxhenkel.voicechat.api.RawUdpPacket;
@@ -28,7 +28,7 @@ public final class VoiceChatServer extends Thread {
     public static final long DEFAULT_PACKET_TTL_MS = 10_000L;
 
     private static final byte PACKET_MIC = 0x1;
-    private static final byte PACKET_GROUP_SOUND = 0x3; // Static (non-positional) sound packet
+    private static final byte PACKET_GROUP_SOUND = 0x3; // static (non-positional) sound packet
     private static final byte PACKET_AUTHENTICATE = 0x5;
     private static final byte PACKET_AUTHENTICATE_ACK = 0x6;
     private static final byte PACKET_PING = 0x7;
@@ -81,8 +81,9 @@ public final class VoiceChatServer extends Thread {
                 try {
                     RawUdpPacket packet = socket.read();
                     if (!packetQueue.offer(packet)) {
-                        // Prefer fresh audio when processing falls behind.
+                        // fresh audio preferred when processing falls behind
                         packetQueue.poll();
+                        //noinspection ResultOfMethodCallIgnored
                         packetQueue.offer(packet);
                     }
                 } catch (Exception e) {
@@ -285,7 +286,7 @@ public final class VoiceChatServer extends Thread {
             return;
         }
 
-        // Build GroupSoundPacket (0x3) which Simple Voice Chat clients play as static (non-proximity) audio
+        // static non-proximity audio via GroupSoundPacket (0x3)
         byte[] plaintextPacket = buildGroupSoundPacket(senderUuid, opusData, sequenceNumber);
 
         for (Player receiver : instance.getPlayers()) {

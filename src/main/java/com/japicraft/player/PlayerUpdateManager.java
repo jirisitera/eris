@@ -1,4 +1,4 @@
-package com.japicraft.events;
+package com.japicraft.player;
 
 import com.japicraft.camera.BombView;
 import com.japicraft.camera.CameraAnchor;
@@ -19,16 +19,14 @@ public final class PlayerUpdateManager {
             BombView.update(player);
             CursorProbe.update(player);
         });
-
         MinecraftServer.getGlobalEventHandler().addListener(InventoryPreClickEvent.class, event -> {
             if (event.getSlot() == PlayerInventoryUtils.OFFHAND_SLOT) {
                 event.setCancelled(true);
             }
         });
-
         MinecraftServer.getGlobalEventHandler().addListener(PlayerPacketEvent.class, event -> {
             Player player = event.getPlayer();
-            // only react to the rotation the client actually sent, the server-side view gets overwritten by the camera vehicle
+            // client packet rotation only, independent of camera vehicle updates to the server view
             if (!ClientView.record(player, event.getPacket())) {
                 return;
             }

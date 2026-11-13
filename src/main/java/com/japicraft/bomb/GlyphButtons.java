@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Four shuffled SGA glyphs, solved in alphabetical order of the underlying letters.
+ * four shuffled SGA glyphs, solved in alphabetical order of the underlying letters
  */
 public final class GlyphButtons {
     private GlyphButtons() {

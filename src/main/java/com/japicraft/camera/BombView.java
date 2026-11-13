@@ -3,9 +3,9 @@ package com.japicraft.camera;
 import com.japicraft.bomb.BombModules;
 import com.japicraft.bomb.Surface;
 import com.japicraft.emote.EmoteWheel;
-import com.japicraft.environment.GameStageManager;
-import com.japicraft.environment.PlayerRole;
 import com.japicraft.environment.StructureLoader;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.player.PlayerRole;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
@@ -16,10 +16,10 @@ import net.minestom.server.item.Material;
 import net.minestom.server.tag.Tag;
 
 /**
- * Shader projection probe plus a shared, world-space cursor on the case's work surface.
+ * shader projection probe plus a shared, world-space cursor on the case's work surface
  */
 public final class BombView {
-    // Center of the open lower case: floor at y=1, rim at y=4 model units.
+    // center of the open lower case: floor at y=1, rim at y=4 model units
     public static final double SURFACE_HEIGHT = 2.5 / 16.0;
     public static final float CURSOR_RANGE = 35.0F;
     public static final Pos CAMERA_POSITION = StructureLoader.CASE_SPAWN.add(0, 1.0, -0.45).withView(0, 61.9F);
@@ -32,7 +32,7 @@ public final class BombView {
     }
 
     /**
-     * Spawn once per player/instance; shader activation does not change entity lifetime.
+     * one spawn per player/instance, independent of shader activation
      */
     public static void attach(Player player) {
         if (player.hasTag(STATE)) return;
@@ -66,7 +66,7 @@ public final class BombView {
     }
 
     /**
-     * Clear interaction state between rounds without destroying the two cursor entities.
+     * round interaction reset with both cursor entities retained
      */
     public static void reset(Player player) {
         State state = player.getTag(STATE);
@@ -82,12 +82,12 @@ public final class BombView {
 
     public static void enter(Player player) {
         if (!GameStageManager.isGame(player) || isActive(player) || PlayerRole.get(player) != PlayerRole.BOMB_DEFUSER
-            || !CameraAnchor.isAttached(player) || player.getInstance() == null) return;
+            || !CameraAnchor.isAttached(player) || !StructureLoader.isBombOpen(player.getInstance())) return;
         if (!player.hasTag(STATE)) attach(player);
         State state = player.getTag(STATE);
         state.fullscreenCursor = EmoteWheel.dismissForModeSwitch(player);
         state.active = true;
-        // Switch logical cursors, client rotation, and shader mode together.
+        // logical cursor and shader mode delivered in the same probe
         ClientView.selectCursor(player, state.surfaceCursor);
         state.indicator.editEntityMeta(ItemDisplayMeta.class, meta -> meta.setItemStack(SHARED_CURSOR));
         update(player);
@@ -105,7 +105,7 @@ public final class BombView {
     }
 
     /**
-     * Normalized surface coordinates, matching the constrained mouse range.
+     * normalized surface coordinates, matching the constrained mouse range
      */
     public static CursorProbe.ScreenPosition surfacePosition(Player player) {
         return new CursorProbe.ScreenPosition(

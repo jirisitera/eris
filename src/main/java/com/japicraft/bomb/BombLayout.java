@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Grid origin is the surface cursor's top-left; X runs across, Y runs down.
+ * surface cursor origin at top-left, X across and Y down
  */
 public record BombLayout(List<Placement> placements) {
     public static final int COLUMNS = 12, ROWS = 8;

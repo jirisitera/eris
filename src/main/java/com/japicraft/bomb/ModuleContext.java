@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Owns a module's entities and translates its local 0..1 layout into bomb coordinates.
+ * module-owned entities with local 0..1 coordinates mapped onto the bomb
  */
 public final class ModuleContext implements AutoCloseable {
     private final Instance instance;
@@ -56,19 +56,19 @@ public final class ModuleContext implements AutoCloseable {
             meta.setShadow(false);
             meta.setLineWidth(100);
             meta.setScale(new Vec(scale, scale, scale));
-            // Face upwards; glyph tops point towards +Z, away from the defuser.
+            // upward faces with glyph tops towards +Z, away from the defuser
             Quaternionf rotation = new Quaternionf().rotationYXZ((float) Math.PI, (float) -Math.PI / 2, 0);
             meta.setLeftRotation(new float[]{rotation.x, rotation.y, rotation.z, rotation.w});
             meta.setBrightness(15, 15);
         });
-        // Text displays are centered horizontally but start at the baseline vertically.
+        // horizontal text centering with vertical alignment at the baseline
         return spawn(entity, Surface.world(rect.center(), 0.015).add(0, 0, -scale * 0.09));
     }
 
     private Entity spawn(Entity entity, Pos position) {
         entity.setNoGravity(true);
         entities.add(entity);
-        // Default auto-viewing deliberately shares every display with all players.
+        // shared display visibility through default auto-viewing
         entity.setInstance(instance, position);
         return entity;
     }

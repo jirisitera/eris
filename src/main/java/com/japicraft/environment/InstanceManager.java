@@ -1,6 +1,8 @@
 package com.japicraft.environment;
 
 import com.japicraft.Eris;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.player.PlayerRole;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -107,7 +109,7 @@ public class InstanceManager {
 
     public synchronized void removePlayer(Player player) {
         UUID uuid = player.getUuid();
-        // A rejected/stale connection must never release another connection's seat.
+        // seat ownership retained when rejecting stale connections
         if (!connectedPlayers.remove(uuid, player)) {
             return;
         }

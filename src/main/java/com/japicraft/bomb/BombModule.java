@@ -1,7 +1,7 @@
 package com.japicraft.bomb;
 
 /**
- * One live module per bomb; definitions can be reused across bombs and layouts.
+ * one live module per bomb with reusable definitions across layouts
  */
 public interface BombModule extends AutoCloseable {
     void hover(Surface.Point cursor);
@@ -11,7 +11,7 @@ public interface BombModule extends AutoCloseable {
     boolean solved();
 
     /**
-     * Replace puzzle state and visuals while keeping the mounted entities.
+     * puzzle and visual reset with mounted entities retained
      */
     void reset(Definition definition);
 

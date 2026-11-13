@@ -1,4 +1,4 @@
-package com.japicraft.environment;
+package com.japicraft.game;
 
 public record RoundSummary(String reason, int mistakes, int secondsRemaining, int solved, int total) {
     public String text() {

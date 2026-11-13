@@ -20,9 +20,9 @@ import java.util.UUID;
 public class GlobalResourcePack {
     private static String calculateHash(URI uri) {
         try (HttpClient client = HttpClient.newHttpClient()) {
-            // download file
+
             HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
-            // calculate SHA1 hash
+
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(response.body()));
         } catch (InterruptedException | IOException | NoSuchAlgorithmException e) {
             return null;
@@ -34,7 +34,7 @@ public class GlobalResourcePack {
     }
 
     public static void register() {
-        // prepare resource pack
+
         URI packURI = URI.create("https://github.com/jirisitera/eris/releases/latest/download/eris.zip");
         String packHash = GlobalResourcePack.calculateHash(packURI);
         if (packHash == null) {

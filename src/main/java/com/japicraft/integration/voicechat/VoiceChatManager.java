@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import com.japicraft.Eris;
 import com.japicraft.service.ActionBarService;
@@ -62,8 +62,8 @@ public final class VoiceChatManager {
 
         GlobalEventHandler events = MinecraftServer.getGlobalEventHandler();
 
-        // NeoForge checks advertised payload channels before sending the initial secret request.
-        // Announce before entering the world, then refresh after each spawn/phase transition.
+        // advertised payload channels required by NeoForge before the initial secret request
+        // channel announcement before world entry and after spawn/phase transitions
         events.addListener(AsyncPlayerConfigurationEvent.class,
             event -> advertiseChannels(event.getPlayer()));
 
@@ -107,7 +107,7 @@ public final class VoiceChatManager {
     }
 
     private static void advertiseChannels(Player player) {
-        // minecraft:register is a NUL-separated UTF-8 list, without a string length prefix.
+        // minecraft:register payload: NUL-separated UTF-8 without a string length prefix
         player.sendPluginMessage("minecraft:register", REGISTERED_CHANNELS);
     }
 
@@ -204,7 +204,7 @@ public final class VoiceChatManager {
         secret.toBytes(buf);
         buf.writeInt(server.getPort());
         buf.writeUUID(uuid);
-        buf.writeByte(0); // Codec.VOIP
+        buf.writeByte(0); // codec: Codec.VOIP
         buf.writeInt(VoiceChatServer.MAX_OPUS_PAYLOAD_SIZE);
         buf.writeDouble(48.0D);
         buf.writeInt(VoiceChatServer.KEEP_ALIVE_INTERVAL_MS);

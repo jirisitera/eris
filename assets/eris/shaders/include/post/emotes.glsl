@@ -1,11 +1,11 @@
 const float EMOTE_WHEEL_PI = 3.14159265;
 const float EMOTE_WHEEL_DEADZONE = 0.12;
-// Shared with EmoteWheel.java: logical cursor coordinates use a fixed reference
-// aspect, then cursor.fsh maps them into the client's actual viewport.
+// shared with EmoteWheel.java: logical cursor coordinates use a fixed reference
+// aspect, then cursor.fsh maps them into the client's actual viewport
 const float EMOTE_WHEEL_CURSOR_ASPECT = 16.0 / 9.0;
 
 int getEmoteWheelSlice(float angle) {
-    // Shift by half a slice (pi/8) so slice 0 is centered at 12 o'clock
+    // half-slice offset (pi/8) centering slice 0 at 12 o'clock
     float shifted = mod(angle + 2.0 * EMOTE_WHEEL_PI + EMOTE_WHEEL_PI / 8.0, 2.0 * EMOTE_WHEEL_PI);
     return int(floor(shifted / (EMOTE_WHEEL_PI / 4.0))) % 8;
 }
@@ -31,7 +31,7 @@ vec4 renderEmoteWheel(vec2 uv, int selectedSlice) {
         return vec4(0.0);
     }
 
-    // Angle clockwise from top (+Y is up in centered screen UV)
+    // angle clockwise from top (+Y is up in centered screen UV)
     float angle = atan(uv.x, uv.y);
     int slice = getEmoteWheelSlice(angle);
     bool hovered = (slice == selectedSlice);
@@ -47,7 +47,6 @@ vec4 renderEmoteWheel(vec2 uv, int selectedSlice) {
     vec3 color = vec3(0.03, 0.04, 0.06);
     float alpha = smoothstep(0.98, 0.30, dist) * 0.22;
 
-    // Center hub disc and ring
     float hubOuter = 0.255;
     float hubInner = 0.220;
     float hubDiscMask = 1.0 - smoothstep(-aa, aa, dist - hubOuter);
@@ -66,7 +65,6 @@ vec4 renderEmoteWheel(vec2 uv, int selectedSlice) {
     color = mix(color, hubRingColor, hubRingMask);
     alpha = max(alpha, hubRingMask * 0.92);
 
-    // Radial wedges
     float wedgeMask = 1.0 - smoothstep(-aa, aa, wedgeSDF);
     if (wedgeMask > 0.001) {
         float radialT = clamp((dist - innerRadius) / (outerRadius - innerRadius), 0.0, 1.0);

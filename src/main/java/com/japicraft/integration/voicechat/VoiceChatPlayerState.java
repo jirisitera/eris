@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import java.util.UUID;
 
@@ -13,14 +13,6 @@ public final class VoiceChatPlayerState {
         this.name = name;
         this.disabled = disabled;
         this.disconnected = disconnected;
-    }
-
-    public UUID uuid() {
-        return uuid;
-    }
-
-    public String name() {
-        return name;
     }
 
     public boolean disabled() {

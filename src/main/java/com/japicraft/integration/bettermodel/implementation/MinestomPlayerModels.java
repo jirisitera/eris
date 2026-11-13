@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import kr.toxicity.model.api.bone.BoneRenderContext;
 import kr.toxicity.model.api.bone.RenderedBone;
@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Builds player models with vanilla skin parts while their actual skin loads.
+ * vanilla skin parts while player skins load
  */
 public final class MinestomPlayerModels {
     private static volatile SkinData[] defaults = new SkinData[0];
@@ -33,7 +33,7 @@ public final class MinestomPlayerModels {
         var loaded = new SkinData[18];
         for (int index = 0; index < loaded.length; index++) {
             int selected = index;
-            // Separate cache identities keep placeholder skins out of real player cache entries.
+            // separate cache identities for placeholder and real player skins
             var info = new ModelProfileInfo(new UUID(0, index), "VanillaDefault" + index);
             var profile = MinestomProfileSupplier.defaultProfile(info);
             SkinManagerImpl.INSTANCE.removeCache(profile);

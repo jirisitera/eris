@@ -1,11 +1,11 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.japicraft.bettermodel.BetterModelPackServer;
+import com.japicraft.integration.bettermodel.BetterModelPackServer;
 import kr.toxicity.model.api.profile.ModelProfile;
 import kr.toxicity.model.api.profile.ModelProfileInfo;
 import kr.toxicity.model.api.profile.ModelProfileSkin;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 final class MinestomProfileSupplier implements ModelProfileSupplier {
-    // Minecraft 26.3 DefaultPlayerSkin order: all slim variants, then all wide variants.
+    // vanilla DefaultPlayerSkin order in 26.3: slim variants before wide variants
     private static final String[] DEFAULT_SKINS = {
         "alex", "ari", "efe", "kai", "makena", "noor", "steve", "sunny", "zuri"
     };
@@ -104,7 +104,7 @@ final class MinestomProfileSupplier implements ModelProfileSupplier {
                     if (supplied.skin() != null) skin = supplied;
                 }
             }
-            // Keep the server identity: offline-mode UUIDs differ from Mojang account UUIDs.
+            // server identity retention for offline-mode UUIDs distinct from Mojang account UUIDs
             return ModelProfile.of(info, skin);
         });
     }

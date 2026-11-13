@@ -1,5 +1,7 @@
-package com.japicraft.environment;
+package com.japicraft.lobby;
 
+import com.japicraft.environment.InstanceManager;
+import com.japicraft.player.PlayerRole;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.coordinate.Vec;
@@ -11,12 +13,12 @@ import net.minestom.server.entity.metadata.display.TextDisplayMeta;
 import net.minestom.server.tag.Tag;
 
 /**
- * One lobby-only display per avatar, visible to every player in the lobby.
+ * one lobby-only display per avatar, visible to every player in the lobby
  */
-final class LobbyRoleLabel {
+public final class LobbyRoleLabel {
     private static final Tag<Entity> LABEL = Tag.Transient("lobbyRoleLabel");
 
-    static void update(Player player, boolean ready) {
+    public static void update(Player player, boolean ready) {
         Entity label = player.getTag(LABEL);
         if (label == null || label.isRemoved()) {
             label = new Entity(EntityType.TEXT_DISPLAY);
@@ -32,7 +34,7 @@ final class LobbyRoleLabel {
             });
             player.setTag(LABEL, label);
             Entity created = label;
-            // In front of the torso, toward the lobby camera; leaves faces visible.
+            // in front of the torso, toward the lobby camera; leaves faces visible
             label.setInstance(player.getInstance(), InstanceManager.lobbyAvatarPosition(player).add(0, 1.05, -0.65))
                 .thenRun(() -> {
                     if (player.getTag(LABEL) != created) created.remove();
@@ -44,7 +46,7 @@ final class LobbyRoleLabel {
                 .append(Component.text(ready ? "Ready" : "Not ready", ready ? NamedTextColor.GREEN : NamedTextColor.GRAY))));
     }
 
-    static void detach(Player player) {
+    public static void detach(Player player) {
         Entity label = player.getTag(LABEL);
         player.removeTag(LABEL);
         if (label != null) label.remove();

@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
 import kr.toxicity.model.api.bone.RenderedBone;
 import kr.toxicity.model.api.data.blueprint.ModelBoundingBox;
 import kr.toxicity.model.api.entity.BaseEntity;

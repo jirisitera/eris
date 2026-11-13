@@ -1,6 +1,6 @@
 package com.japicraft.command;
 
-import com.japicraft.environment.GameStageManager;
+import com.japicraft.game.GameStageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.command.builder.Command;

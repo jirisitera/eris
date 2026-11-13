@@ -1,8 +1,8 @@
-package com.japicraft.environment;
+package com.japicraft.service;
 
-import com.japicraft.bettermodel.MinestomAdapter;
-import com.japicraft.bettermodel.impl.MinestomPlayerModels;
-import com.japicraft.bettermodel.impl.MinestomScheduler;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.implementation.MinestomPlayerModels;
+import com.japicraft.integration.bettermodel.implementation.MinestomScheduler;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.animation.AnimationIterator;
 import kr.toxicity.model.api.animation.AnimationModifier;
@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AnimationManager {
+public class AnimationService {
     private static final int TIMER_TAG_G = 253;
     private static final String DEFAULT_TIMER_MODEL = "case";
     private static final Tag<Task> TIMER_TASK_TAG = Tag.Transient("caseTimerTask");
@@ -36,7 +36,7 @@ public class AnimationManager {
     }
 
     /**
-     * Reset an animated pose without closing its tracker or removing model displays.
+     * pose reset with tracker and model displays retained
      */
     public static void stopAnimation(Entity entity, String animation) {
         EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
@@ -112,6 +112,11 @@ public class AnimationManager {
         entity.setTag(TIMER_TASK_TAG, task);
     }
 
+    public static boolean isTimerRunning(@NotNull Entity entity) {
+        Task task = entity.getTag(TIMER_TASK_TAG);
+        return task != null && task.isAlive();
+    }
+
     public static void stopTimer(@NotNull Entity entity) {
         Task existing = entity.getTag(TIMER_TASK_TAG);
         if (existing != null) {
@@ -123,7 +128,7 @@ public class AnimationManager {
     private static @Nullable EntityTracker resolveTracker(@NotNull Entity entity) {
         EntityTrackerRegistry registry = BetterModel.registryOrNull(entity.getUuid());
         if (registry != null) {
-            EntityTracker tracker = registry.tracker(AnimationManager.DEFAULT_TIMER_MODEL);
+            EntityTracker tracker = registry.tracker(AnimationService.DEFAULT_TIMER_MODEL);
             if (tracker != null) {
                 return tracker;
             }
@@ -132,7 +137,7 @@ public class AnimationManager {
                 return first;
             }
         }
-        Optional<ModelRenderer> optModel = BetterModel.model(AnimationManager.DEFAULT_TIMER_MODEL);
+        Optional<ModelRenderer> optModel = BetterModel.model(AnimationService.DEFAULT_TIMER_MODEL);
         return optModel.map(modelRenderer -> MinestomPlayerModels.getOrCreate(modelRenderer,
             MinestomAdapter.adapt(entity),
             TrackerModifier.DEFAULT,
@@ -181,7 +186,6 @@ public class AnimationManager {
             return;
         }
 
-        // Re-use or obtain tracker WITHOUT closing the registry
         EntityTracker tracker = MinestomPlayerModels.getOrCreate(selectedModel,
             MinestomAdapter.adapt(entity),
             TrackerModifier.DEFAULT,
@@ -192,7 +196,17 @@ public class AnimationManager {
     }
 
     /**
-     * Shared idle/conflict/completion handling for scene models and player emotes.
+     * replace the whole base pose, including bones absent from the new animation
+     */
+    public static void animateBasePose(EntityTracker tracker, ModelRenderer model, BlueprintAnimation pose) {
+        for (String animation : model.animations().keySet()) {
+            if (!animation.equalsIgnoreCase(pose.name())) tracker.stopAnimation(animation);
+        }
+        tracker.animate(pose, new AnimationModifier(0, 0, AnimationIterator.Type.LOOP));
+    }
+
+    /**
+     * shared idle/conflict/completion handling for scene models and player emotes
      */
     public static void animate(EntityTracker tracker, ModelRenderer selectedModel,
                                BlueprintAnimation selectedAnim, Runnable finishedWithoutIdle) {
@@ -200,17 +214,11 @@ public class AnimationManager {
         boolean isIdle = "idle".equalsIgnoreCase(selectedAnim.name());
 
         if (isIdle) {
-            // Stop any other active animations on the model to cleanly return to idle
-            for (String otherAnim : selectedModel.animations().keySet()) {
-                if (!otherAnim.equalsIgnoreCase("idle")) {
-                    tracker.stopAnimation(otherAnim);
-                }
-            }
-            tracker.animate(selectedAnim, new AnimationModifier(0, 0, AnimationIterator.Type.LOOP));
+            animateBasePose(tracker, selectedModel, selectedAnim);
             return;
         }
 
-        // If an idle animation exists on the model, ensure idle is queued as the persistent base loop
+        // persistent base loop for models with an idle animation
         if (idleOpt.isPresent()) {
             BlueprintAnimation idleAnim = idleOpt.get();
             boolean idleAlreadyQueued = tracker.bones().stream()
@@ -221,14 +229,12 @@ public class AnimationManager {
             }
         }
 
-        // Stop any conflicting non-idle animations
         for (String otherAnim : selectedModel.animations().keySet()) {
             if (!otherAnim.equalsIgnoreCase("idle") && !otherAnim.equalsIgnoreCase(selectedAnim.name())) {
                 tracker.stopAnimation(otherAnim);
             }
         }
 
-        // Prepare the animation completion callback
         Runnable onEnd;
         if (selectedAnim.loop() == AnimationIterator.Type.PLAY_ONCE) {
             AtomicBoolean ended = new AtomicBoolean(false);
@@ -236,13 +242,13 @@ public class AnimationManager {
                 if (!ended.compareAndSet(false, true)) {
                     return;
                 }
-                // Run on next tick outside the bone state iteration to avoid ConcurrentModificationException
+                // next-tick callback outside bone iteration to avoid ConcurrentModificationException
                 MinestomScheduler.INSTANCE.task(() -> {
                     if (tracker.isClosed()) {
                         return;
                     }
                     if (idleOpt.isPresent()) {
-                        // Ensure idle is resumed if no other animation is active
+
                         boolean anyRunning = tracker.bones().stream().anyMatch(b -> b.runningAnimation() != null);
                         if (!anyRunning) {
                             tracker.animate(idleOpt.get(), new AnimationModifier(0, 0, AnimationIterator.Type.LOOP));

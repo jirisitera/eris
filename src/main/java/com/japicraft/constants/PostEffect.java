@@ -1,4 +1,4 @@
-package com.japicraft.server;
+package com.japicraft.constants;
 
 import com.japicraft.Eris;
 import net.kyori.adventure.key.Key;

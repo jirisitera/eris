@@ -1,4 +1,4 @@
-package com.japicraft.voicechat;
+package com.japicraft.integration.voicechat;
 
 import de.maxhenkel.voicechat.api.RawUdpPacket;
 import de.maxhenkel.voicechat.api.VoicechatSocket;
@@ -24,7 +24,7 @@ public final class VoiceChatSocketImpl implements VoicechatSocket {
             address = InetAddress.getByName(bindAddress);
         }
         socket = address != null ? new DatagramSocket(port, address) : new DatagramSocket(port);
-        socket.setTrafficClass(0x04); // IPTOS_RELIABILITY
+        socket.setTrafficClass(0x04); // traffic class: IPTOS_RELIABILITY
     }
 
     @Override

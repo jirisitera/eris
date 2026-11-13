@@ -2,8 +2,8 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // @formatter:off
-#include <eris:timer.glsl>
-#include <eris:ui_data.glsl>
+#include <eris:post/timer.glsl>
+#include <eris:post/ui_data.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
@@ -12,7 +12,7 @@ uniform sampler2D FontSampler;
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
-// ---- Font atlas (textures/effect/font.png, 40x64 cells, 12 per row: 0-9 :, A-L, M-X, Y Z ! ? . - ') ----
+// font atlas: textures/effect/font.png, 40x64 cells, 12 per row: 0-9 :, A-L, M-X, Y Z ! ? . - '
 const vec2 FONT_CELL = vec2(40.0, 64.0);
 const int FONT_COLUMNS = 12;
 const int CH_COLON = 10;
@@ -52,12 +52,11 @@ vec3 renderTimer(vec2 uv, int minutes, int seconds, int strikes) {
     vec2 innerUv = (uv - bezel) / (1.0 - bezel * 2.0);
     vec3 col = mix(vec3(0.06, 0.045, 0.015), vec3(0.03, 0.022, 0.008), innerUv.y);
 
-    // Subtle scanlines and glass reflection
     col *= 0.88 + 0.12 * sin(innerUv.y * 64.0 * 3.14159265);
     float glare = smoothstep(0.25, 0.0, abs(innerUv.x - innerUv.y * 0.55 - 0.18)) * 0.04;
     col += vec3(0.95, 0.8, 0.4) * glare;
 
-    // Top row: MM:SS countdown (pure yellow LED)
+    // top row: MM:SS countdown (pure yellow LED)
     int chars[5] = int[](minutes / 10, minutes % 10, CH_COLON, seconds / 10, seconds % 10);
     int ghost[5] = int[](8, 8, CH_COLON, 8, 8);
 
@@ -70,7 +69,7 @@ vec3 renderTimer(vec2 uv, int minutes, int seconds, int strikes) {
         col = mix(col, vec3(1.0, 1.0, 0.0), activeInk);
     }
 
-    // Bottom row: 3 strike indicators ('X') enabled left-to-right
+    // bottom row: 3 strike indicators ('X') enabled left-to-right
     const float STRIKE_HEIGHT = 0.46;
     const float STRIKE_SPACING = 0.22;
     float strikeCellWidth = STRIKE_HEIGHT * (FONT_CELL.x / FONT_CELL.y) / TIMER_ASPECT.x;
@@ -86,7 +85,6 @@ vec3 renderTimer(vec2 uv, int minutes, int seconds, int strikes) {
         }
     }
 
-    // Inset shadow around the glass edge
     vec2 edge = min(innerUv, 1.0 - innerUv) * TIMER_ASPECT;
     col *= smoothstep(0.0, 0.06, min(edge.x, edge.y)) * 0.45 + 0.55;
     return col;

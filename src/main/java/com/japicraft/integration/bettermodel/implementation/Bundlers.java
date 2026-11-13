@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomAdapter;
+import com.japicraft.integration.bettermodel.MinestomAdapter;
 import kr.toxicity.model.api.nms.ModAnimationBundler;
 import kr.toxicity.model.api.nms.PacketBundler;
 import kr.toxicity.model.api.platform.PlatformPlayer;
@@ -22,10 +22,6 @@ public final class Bundlers {
 
     public static @NotNull Simple of(int initialCapacity) {
         return new Simple(new ArrayList<>(initialCapacity));
-    }
-
-    public static @NotNull Simple of(ServerPacket... packets) {
-        return new Simple(new ArrayList<>(List.of(packets)));
     }
 
     public static void add(@NotNull PacketBundler bundler, @NotNull ServerPacket packet) {

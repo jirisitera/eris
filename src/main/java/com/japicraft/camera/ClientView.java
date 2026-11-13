@@ -47,8 +47,8 @@ public final class ClientView {
             case ClientPlayerRotationPacket rotation -> {
                 nextRawYaw = rotation.yaw();
                 nextRawPitch = rotation.pitch();
-                // Rotation-only packets retain unbounded yaw. A fast movement can exceed
-                // half a turn between packets; wrapping that delta would reverse its direction.
+                // unbounded rotation-only yaw for fast movements beyond half a turn per packet
+
                 deltaYaw = previous == null ? wrapDegrees(nextRawYaw) : nextRawYaw - previous.yaw();
                 deltaPitch = previous == null ? nextRawPitch : nextRawPitch - previous.pitch();
             }
@@ -67,8 +67,8 @@ public final class ClientView {
 
         View pendingView = player.getTag(PENDING_VIEW);
         if (pendingView != null) {
-            // Rotation corrections immediately echo a rotation packet from the client.
-            // Ignore old in-flight input and the correction itself on both axes until that echo arrives.
+            // client rotation echo after corrections
+            // old in-flight input and correction movement ignored until the echo
             deltaYaw = 0.0F;
             deltaPitch = 0.0F;
             if (Math.abs(wrapDegrees(nextRawYaw - pendingView.yaw())) <= VIEW_EPSILON
@@ -95,9 +95,9 @@ public final class ClientView {
         player.setTag(MOUSE_YAW, nextMouseYaw);
         player.setTag(MOUSE_PITCH, nextMousePitch);
         player.setTag(TAG, new View(nextRawYaw, nextRawPitch));
-        // Minecraft clamps its own pitch to +/-90 independently of the virtual cursor.
-        // Edge overscroll and mode switches can offset these ranges. Rebase before the
-        // physical pitch limit strands the cursor short of its canvas edge.
+        // native pitch clamp at +/-90, independent of the virtual cursor
+        // pitch rebasing after overscroll or mode switches, before the native clamp
+
         if (!player.hasTag(PENDING_VIEW) && Math.abs(nextRawPitch) >= RAW_PITCH_RECENTER_THRESHOLD
             && Math.abs(nextRawPitch - nextMousePitch) > VIEW_EPSILON) {
             correctView(player, new View(wrapDegrees(nextRawYaw), nextMousePitch));
@@ -121,7 +121,7 @@ public final class ClientView {
     public static float pitch(Player player) {
         View pendingView = player.getTag(PENDING_VIEW);
         if (pendingView != null) {
-            // The probe and correction are delivered together; extrapolate from the corrected view.
+            // extrapolation from the corrected view bundled with the probe
             return pendingView.pitch();
         }
         View view = player.getTag(TAG);
@@ -143,24 +143,32 @@ public final class ClientView {
     }
 
     /**
-     * Change cursors and align the client's physical pitch range with the selected canvas.
+     * switch virtual canvases without moving the native input baseline
      */
     public static void selectCursor(Player player, CursorPosition position) {
-        restoreCursor(player, position);
+        setCursorPosition(player, position);
+        // The held probe can render a tick after a rotation packet. Keep raw input
+        // steady so the old canvas cannot extrapolate toward the new position.
+        CursorProbe.update(player);
     }
 
     public static void restoreCursor(Player player, CursorPosition position) {
+        View target = setCursorPosition(player, position);
+        correctView(player, target);
+    }
+
+    private static View setCursorPosition(Player player, CursorPosition position) {
         float yawLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_YAW;
         float pitchLimit = BombView.isActive(player) ? BombView.CURSOR_RANGE : MAX_CURSOR_PITCH;
         float yaw = Math.clamp(position.yaw(), -yawLimit, yawLimit);
         float pitch = Math.clamp(position.pitch(), -pitchLimit, pitchLimit);
         player.setTag(MOUSE_YAW, yaw);
         player.setTag(MOUSE_PITCH, pitch);
-        correctView(player, new View(yaw, pitch));
+        return new View(yaw, pitch);
     }
 
     private static void correctView(Player player, View target) {
-        // Correct both client axes together, using the same baseline as the restored probe.
+        // paired axis correction using the restored probe baseline
         player.setTag(PENDING_VIEW, target);
         CursorProbe.updateWithRotation(player, new PlayerRotationPacket(target.yaw(), false, target.pitch(), false));
     }

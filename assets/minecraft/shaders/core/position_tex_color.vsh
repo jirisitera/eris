@@ -30,11 +30,7 @@ void main() {
     lookAngles = vec2(0.0);
 
     ivec2 atlasSize = textureSize(Sampler0, 0);
-    ivec4 markerColor = ivec4(round(texelFetch(
-        Sampler0,
-        ivec2(fract(UV0) * vec2(atlasSize)) % atlasSize,
-        0
-    ) * 255.0));
+    ivec4 markerColor = ivec4(round(texelFetch(Sampler0, ivec2(fract(UV0) * vec2(atlasSize)) % atlasSize, 0) * 255.0));
 
     if (markerColor == ivec4(254, 171, 33, 255)) {
         float yaw = UV0.x - (Position.x < 0.0 ? 4.0 : 0.0);

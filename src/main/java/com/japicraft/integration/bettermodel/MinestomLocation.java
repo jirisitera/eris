@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel;
+package com.japicraft.integration.bettermodel;
 
-import com.japicraft.bettermodel.impl.MinestomScheduler;
+import com.japicraft.integration.bettermodel.implementation.MinestomScheduler;
 import kr.toxicity.model.api.platform.PlatformLocation;
 import kr.toxicity.model.api.platform.PlatformWorld;
 import kr.toxicity.model.api.scheduler.ModelTask;

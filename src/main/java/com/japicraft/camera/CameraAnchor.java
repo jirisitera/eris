@@ -2,11 +2,11 @@ package com.japicraft.camera;
 
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
-import com.japicraft.environment.GameStageManager;
 import com.japicraft.environment.InstanceManager;
-import com.japicraft.environment.PlayerRole;
 import com.japicraft.environment.StructureLoader;
 import com.japicraft.environment.StructureLoader.CameraTarget;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.player.PlayerRole;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -27,9 +27,9 @@ public final class CameraAnchor {
     public static final float MOVE_SPEED = 20.0f;
     public static final float ARRIVAL_FACTOR = 0.50f;
     public static final float CAMERA_HEIGHT = 1.65f;
-    // Helper watches the work surface from the right-hand side of the case.
+    // helper view from the right-hand side of the case
     public static final Pos HELPER_LEAN_POSITION = StructureLoader.CASE_SPAWN.add(0.65, 1.0, 0).withView(90.0F, 52.5F);
-    // Expert reads the manual from their side of the table.
+    // expert view of the manual from their side of the table
     public static final Pos EXPERT_LEAN_POSITION = StructureLoader.MANUAL_SPAWN.add(0, 1.0, 0.45).withView(180.0F, 45F);
     private static final Tag<Entity> anchor = Tag.Transient("cameraAnchor");
     private static final Tag<Entity> bodyAnchor = Tag.Transient("bodyAnchor");
@@ -49,6 +49,8 @@ public final class CameraAnchor {
         if (current == null || current.roleLeaning || player.getInstance() == null
             || !GameStageManager.isGame(player) || (PlayerRole.get(player) != PlayerRole.DEFUSAL_HELPER
             && PlayerRole.get(player) != PlayerRole.MANUAL_EXPERT)) return;
+        if (PlayerRole.get(player) == PlayerRole.DEFUSAL_HELPER
+            && !StructureLoader.isBombOpen(player.getInstance())) return;
         current.roleLeaning = true;
         ClientView.selectCursor(player, EmoteWheel.dismissForModeSwitch(player));
     }
@@ -72,14 +74,14 @@ public final class CameraAnchor {
     }
 
     /**
-     * Stationary body mount; the model's existing vertical offset places its feet at the role spawn.
+     * stationary body mount with model feet offset to the role spawn
      */
     public static Pos bodyPosition(Player player) {
-        // The underwater input overlay checks the real player's eyes, not the spectated camera.
-        // Lobby models are offset visually to their seats while every real player stays here.
+        // underwater input based on the real player's eyes rather than the camera
+        // visual lobby seats independent of real player positions
         if (!GameStageManager.isGame(player)) {
-            // Empty displays have no passenger offset; cancel the player's vehicle
-            // attachment so their real position, rather than just the mount, is at the camera.
+            // vehicle attachment compensation for real player positioning at the camera
+
             var attachments = player.getEntityType().entityAttachments("VEHICLE");
             Vec riding = attachments == null ? Vec.ZERO : attachments.getFirst().rotateAroundY(-Math.PI);
             return InstanceManager.LOBBY_CENTER.add(riding).withYaw(180);
@@ -88,7 +90,7 @@ public final class CameraAnchor {
     }
 
     /**
-     * The shared lobby view or the player's role-specific eye position.
+     * shared lobby view or role-specific eye position
      */
     public static Pos homePosition(Player player) {
         if (!GameStageManager.isGame(player)) return InstanceManager.LOBBY_CAMERA;
@@ -111,7 +113,7 @@ public final class CameraAnchor {
     }
 
     /**
-     * Replay body mounts after the joining viewer has received both vehicles and players.
+     * body mount replay after vehicle and player delivery to the joining viewer
      */
     public static void syncBodyMounts(Player viewer) {
         if (viewer.getInstance() == null) return;
@@ -135,7 +137,7 @@ public final class CameraAnchor {
     }
 
     /**
-     * Create once, then reposition the existing body and switch between persistent cameras.
+     * body reuse and persistent camera switching
      */
     public static void attach(Player player) {
         boolean playing = GameStageManager.isGame(player);
@@ -173,9 +175,9 @@ public final class CameraAnchor {
         CompletableFuture<Void> cameraReady = playing ? camera.ready().thenCompose(_ -> display.teleport(startPos)) : camera.ready();
         cameraReady.thenRun(() -> {
             if (player.getTag(CameraAnchor.anchor) == display && canSendCamera(player)) {
-                // SpawnEntity rounds angles to bytes (8 degrees becomes 7.03125).
-                // Apply the precise transform before spectating, rather than waiting
-                // for the periodic entity sync to visibly pitch the camera downward.
+                // byte-rounded SpawnEntity angles (8 degrees becomes 7.03125)
+                // precise transform before spectating to avoid a delayed pitch shift
+
                 player.sendPacket(new EntityPositionSyncPacket(display.getEntityId(),
                     new PositionPath.Linear(startPos), startPos.yaw(), startPos.pitch(), false));
                 player.spectate(display);
@@ -217,8 +219,8 @@ public final class CameraAnchor {
     }
 
     public static void update(Player player) {
-        // Every lobby participant spectates the same stationary entity. Mouse input
-        // only moves their own UI cursor; it must never move the shared camera.
+        // shared stationary lobby camera with independent per-player UI cursors
+
         if (!GameStageManager.isGame(player)) return;
         Entity anchor = player.getTag(CameraAnchor.anchor);
         View view = player.getTag(CameraAnchor.view);
@@ -258,7 +260,7 @@ public final class CameraAnchor {
     }
 
     /**
-     * Camera yaw offset following the fullscreen cursor (-1..1 across the screen width).
+     * camera yaw offset following the fullscreen cursor (-1..1 across the screen width)
      */
     public static float getYawOffset(Player player) {
         if (!GameStageManager.isGame(player)) return 0;
@@ -266,7 +268,7 @@ public final class CameraAnchor {
     }
 
     /**
-     * Camera pitch offset following the fullscreen cursor (-1..1 across the screen height).
+     * camera pitch offset following the fullscreen cursor (-1..1 across the screen height)
      */
     public static float getPitchOffset(Player player) {
         if (!GameStageManager.isGame(player)) return 0;

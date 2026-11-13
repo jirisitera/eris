@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel;
+package com.japicraft.integration.bettermodel;
 
-import com.japicraft.bettermodel.impl.MinestomBetterModel;
+import com.japicraft.integration.bettermodel.implementation.MinestomBetterModel;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.BetterModelPlatform;
 import net.minestom.server.MinecraftServer;

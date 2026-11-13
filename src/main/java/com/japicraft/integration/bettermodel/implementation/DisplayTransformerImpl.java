@@ -1,4 +1,4 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
 import kr.toxicity.model.api.nms.AnimationBundler;
 import kr.toxicity.model.api.nms.DisplayTransformer;

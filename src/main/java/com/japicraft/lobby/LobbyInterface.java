@@ -1,17 +1,19 @@
-package com.japicraft.environment;
+package com.japicraft.lobby;
 
 import com.japicraft.camera.CursorProbe;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.player.PlayerRole;
 import net.minestom.server.entity.Player;
 
 /**
- * Screen coordinates use a top-left origin, matching the fullscreen cursor shader.
+ * screen coordinates use a top-left origin, matching the fullscreen cursor shader
  */
-public final class LobbyUi {
+public final class LobbyInterface {
     public static final int PREVIOUS_ROLE_BUTTON = 0;
     public static final int NEXT_ROLE_BUTTON = 1;
     public static final int READY_BUTTON = 3;
 
-    // Keep these bounds in sync with assets/eris/shaders/include/lobby.glsl.
+    // shared bounds with assets/eris/shaders/include/post/lobby_text.glsl
     public static int hoveredButton(float x, float y) {
         if (!Float.isFinite(x) || !Float.isFinite(y)) return -1;
         if (y >= 0.755f && y <= 0.835f) {

@@ -1,10 +1,10 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomPlayer;
 import com.japicraft.camera.BombView;
 import com.japicraft.camera.CameraAnchor;
 import com.japicraft.emote.EmoteManager;
-import com.japicraft.environment.GameStageManager;
+import com.japicraft.game.GameStageManager;
+import com.japicraft.integration.bettermodel.MinestomPlayer;
 import kr.toxicity.model.api.armor.PlayerArmor;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.platform.PlatformPlayer;

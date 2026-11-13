@@ -3,7 +3,7 @@
 
 // @formatter:off
 #include <minecraft:globals.glsl>
-#include <eris:ui_data.glsl>
+#include <eris:post/ui_data.glsl>
 // @formatter:on
 
 uniform sampler2D InSampler;
@@ -74,14 +74,13 @@ void main() {
     float distortion = CHROMATIC_ABERRATION * distFromCenter * distFromCenter;
 
     vec3 sceneColor;
-    // Chromatic aberration + AO + Bloom
+
     sceneColor = vec3(
         sampleScene(pixelUv + centeredUv * distortion).r,
         sampleScene(pixelUv).g,
         sampleScene(pixelUv - centeredUv * distortion).b
     ) * sampleBlurredAo(pixelUv) + texture(BloomSampler, pixelUv).rgb;
 
-    // Post-processing color adjustments
     sceneColor *= EXPOSURE;
     sceneColor = mix(sceneColor, sceneColor * COLOR_TINT, TINT_STRENGTH);
 

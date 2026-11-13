@@ -25,34 +25,22 @@ void main() {
     if (lookMark != 0) {
         ivec2 pixel = ivec2(gl_FragCoord.xy);
 
-        // The post effect samples exactly three pixels from this row.
+        // three metadata pixels sampled by the cursor post effect
         if (pixel.y != MARKER_Y ||
             pixel.x < MARKER_X_MIN ||
             pixel.x > MARKER_X_MAX) {
             discard;
         }
 
-        // Store signed yaw (-720..720 degrees) wrapped modulo 1440 as an unsigned value.
+        // unsigned encoding of yaw wrapped across -720..720 degrees
         float wrappedYaw = mod(mod(lookAngles.x + 720.0, 1440.0) + 1440.0, 1440.0);
-        int encodedYaw = clamp(
-            int(round(wrappedYaw / 1440.0 * 65535.0)),
-            0,
-            65535
-        );
+        int encodedYaw = clamp(int(round(wrappedYaw / 1440.0 * 65535.0)), 0, 65535);
 
-        // Store pitch as an unsigned value spanning the complete -90..90
-        // range.
-        int encodedPitch = clamp(
-            int(round((lookAngles.y + 90.0) / 180.0 * 65535.0)),
-            0,
-            65535
-        );
+        // unsigned encoding of pitch across -90..90 degrees
 
-        ivec3 marker = pixel.x == 26
-        ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8)
-        : pixel.x == 27
-        ? ivec3(encodedPitch & 255, 0, 0)
-        : MARKER_COLOR;
+        int encodedPitch = clamp(int(round((lookAngles.y + 90.0) / 180.0 * 65535.0)), 0, 65535);
+
+        ivec3 marker = pixel.x == 26 ? ivec3(encodedYaw >> 8, encodedYaw & 255, encodedPitch >> 8) : pixel.x == 27 ? ivec3(encodedPitch & 255, 0, 0) : MARKER_COLOR;
 
         fragColor = vec4(vec3(marker) / 255.0, 1.0);
         return;

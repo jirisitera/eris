@@ -2,7 +2,7 @@ package com.japicraft.camera;
 
 import com.japicraft.Eris;
 import com.japicraft.emote.EmoteWheel;
-import com.japicraft.environment.GameStageManager;
+import com.japicraft.game.GameStageManager;
 import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.EquipmentSlot;
@@ -25,7 +25,7 @@ public final class CursorProbe {
         return item.material() == Material.ECHO_SHARD && ITEM_MODEL.equals(item.get(DataComponents.ITEM_MODEL));
     }
 
-    // Encodes angles and UI flags into the 8 custom-model-data colors read by cursor.fsh at row y=19
+    // angles and UI flags in eight custom-model-data colors, cursor.fsh row y=19
     private static ItemStack createProbe(int mouseYaw, int mousePitch, int rawYaw, int rawPitch, boolean emoteWheelOpen, boolean surfaceMode, boolean correctionPending, int lobbyData) {
         return ItemStack.of(Material.ECHO_SHARD).withItemModel(ITEM_MODEL).withCustomModelData(List.of(), List.of(), List.of(), List.of(
             new Color(mouseYaw >>> 8, mouseYaw & 0xFF, mousePitch >>> 8),
@@ -67,7 +67,7 @@ public final class CursorProbe {
     }
 
     public static void updateWithRotation(Player player, PlayerRotationPacket rotation) {
-        // Do not render an intermediate frame with a new pitch and the old wheel/probe data.
+        // bundled rotation and probe updates to prevent mixed-frame data
         player.sendPacket(new BundlePacket());
         try {
             update(player);
@@ -123,6 +123,7 @@ public final class CursorProbe {
     public record ScreenPosition(float x, float y) {
     }
 
-    private record ProbeState(long key, boolean emoteWheelOpen, boolean surfaceMode, boolean correctionPending, int lobbyData, ItemStack item) {
+    private record ProbeState(long key, boolean emoteWheelOpen, boolean surfaceMode, boolean correctionPending,
+                              int lobbyData, ItemStack item) {
     }
 }

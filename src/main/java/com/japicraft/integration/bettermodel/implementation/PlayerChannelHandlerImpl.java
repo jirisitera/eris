@@ -1,6 +1,6 @@
-package com.japicraft.bettermodel.impl;
+package com.japicraft.integration.bettermodel.implementation;
 
-import com.japicraft.bettermodel.MinestomPlayer;
+import com.japicraft.integration.bettermodel.MinestomPlayer;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.entity.BasePlayer;
 import kr.toxicity.model.api.nms.Identifiable;
