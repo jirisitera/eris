@@ -9,6 +9,7 @@ import com.japicraft.integration.voicechat.VoiceChatManager;
 import com.japicraft.player.PlayerInputManager;
 import com.japicraft.player.PlayerSetupManager;
 import com.japicraft.player.PlayerUpdateManager;
+import com.japicraft.server.GlobalResourcePack;
 import com.japicraft.server.ServerListManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -71,7 +72,7 @@ public final class Eris {
         PlayerUpdateManager.register();
         PlayerInputManager.register();
 
-        //GlobalResourcePack.register();
+        GlobalResourcePack.register();
 
         new InstanceManager().register();
         ServerListManager.register();

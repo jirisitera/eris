@@ -6,7 +6,6 @@ import com.japicraft.camera.CursorProbe;
 import com.japicraft.constants.PostEffect;
 import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
-import com.japicraft.environment.InstanceManager;
 import com.japicraft.environment.StructureLoader;
 import com.japicraft.integration.voicechat.VoiceChatManager;
 import com.japicraft.lobby.LobbyRoleLabel;

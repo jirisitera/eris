@@ -2,11 +2,9 @@ package com.japicraft.player;
 
 import com.japicraft.camera.BombView;
 import com.japicraft.camera.CameraAnchor;
-import com.japicraft.emote.EmoteManager;
 import com.japicraft.emote.EmoteWheel;
 import com.japicraft.game.GameStageManager;
 import com.japicraft.lobby.LobbyInterface;
-import com.japicraft.service.NotificationService;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerHand;

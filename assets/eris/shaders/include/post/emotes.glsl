@@ -1,5 +1,7 @@
 uniform sampler2D EmoteFontSampler;
+// @formatter:off
 #include <eris:post/emote_font.glsl>
+// @formatter:on
 
 const float EMOTE_WHEEL_PI = 3.14159265;
 const float EMOTE_WHEEL_RADIUS = 0.38;
@@ -51,10 +53,10 @@ float emoteText(vec2 uv, vec2 center, float height, int label) {
             vec2 pixel = vec2(glyph % 16, glyph / 16) * vec2(48.0, 72.0) + local;
             vec2 sampleUv = pixel / vec2(768.0, 432.0);
             return 0.25 * (
-                texture(EmoteFontSampler, sampleUv + filterRadius).r +
-                texture(EmoteFontSampler, sampleUv - filterRadius).r +
-                texture(EmoteFontSampler, sampleUv + filterRadius * vec2(1.0, -1.0)).r +
-                texture(EmoteFontSampler, sampleUv + filterRadius * vec2(-1.0, 1.0)).r);
+            texture(EmoteFontSampler, sampleUv + filterRadius).r +
+            texture(EmoteFontSampler, sampleUv - filterRadius).r +
+            texture(EmoteFontSampler, sampleUv + filterRadius * vec2(1.0, -1.0)).r +
+            texture(EmoteFontSampler, sampleUv + filterRadius * vec2(-1.0, 1.0)).r);
         }
         x -= advance;
     }
