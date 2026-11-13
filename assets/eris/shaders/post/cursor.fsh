@@ -148,8 +148,9 @@ void main() {
         if (emoteWheelOpen) {
             vec2 cursorOffset = vec2(cursorNdc.x * aspect, -cursorNdc.y);
             int hoveredSlice = getHoveredEmoteSlice(cursorOffset);
-            vec2 wheelUv = (texCoord - 0.5) * vec2(aspect, 1.0) / 0.30;
+            vec2 wheelUv = (texCoord - 0.5) * vec2(aspect, 1.0) / EMOTE_WHEEL_RADIUS;
             vec4 wheel = renderEmoteWheel(wheelUv, hoveredSlice);
+            sceneColor *= 0.68;
             sceneColor = mix(sceneColor, wheel.rgb, wheel.a);
         }
 

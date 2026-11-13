@@ -13,7 +13,4 @@ A special type of Minecraft minigame. Made for vanilla Minecraft 26.3 and newer.
   - deaf player - headphones
   - blind player - blindfold
 
-- new stage, pregame
-  - after lobby stage, before game stage
-  - gives players time to look around
-  - lasts 5 seconds
+- big flashing warning when you are muted or deafened client-side (and instructions what to click in the voice chat menu)

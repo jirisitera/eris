@@ -13,7 +13,7 @@ public final class EmoteWheel {
     // logical wheel cursor aspect shared with post/emotes.glsl
     // viewport mapping in the shader, independent of client dimensions on the server
     private static final float CURSOR_REFERENCE_ASPECT = 16.0F / 9.0F;
-    private static final float CENTER_DEADZONE = 0.12F;
+    private static final float CENTER_DEADZONE = 0.25F;
     private static final Tag<Boolean> OPEN_TAG = Tag.Transient("emoteWheelOpen");
     private static final Tag<ClientView.CursorPosition> CURSOR_TAG = Tag.Transient("emoteWheelCursor");
     private static final Tag<ClientView.CursorPosition> RESTORE_TAG = Tag.Transient("emoteWheelCursorRestore");

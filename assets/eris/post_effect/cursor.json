@@ -19,6 +19,13 @@
                     "bilinear": false
                 },
                 {
+                    "sampler_name": "EmoteFont",
+                    "location": "eris:emote_font",
+                    "width": 768,
+                    "height": 432,
+                    "bilinear": true
+                },
+                {
                     "sampler_name": "Font",
                     "location": "eris:font",
                     "width": 512,

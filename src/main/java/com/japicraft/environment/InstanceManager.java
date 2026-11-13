@@ -16,14 +16,13 @@ import java.util.*;
 
 public class InstanceManager {
     public static final Pos WORLD_ORIGIN = new Pos(0.0, 100.0, 0.0);
-    public static final Pos DEFUSER_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 2.85);
-    public static final Pos HELPER_SPAWN = WORLD_ORIGIN.add(8.15, 1.0, 4.5).withYaw(90.0F);
-    public static final Pos EXPERT_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 8.15).withYaw(180.0F);
+    public static final Pos DEFUSER_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 2.85).withYaw(-20.0F);
+    public static final Pos HELPER_SPAWN = WORLD_ORIGIN.add(8.15, 1.0, 4.5).withYaw(70.0F);
+    public static final Pos EXPERT_SPAWN = WORLD_ORIGIN.add(5.5, 1.0, 8.15).withYaw(-160.0F);
     public static final Pos LOBBY_CENTER = new Pos(6.5, 200, 6.5);
-    public static final Pos LOBBY_CAMERA = LOBBY_CENTER.withView(0, 8);
+    public static final Pos LOBBY_CAMERA = LOBBY_CENTER.withPitch(5);
     private static final Pos LOBBY_AVATAR_CENTER = LOBBY_CENTER.add(0, -1.65, 6).withYaw(180);
-    private static final List<Pos> LOBBY_SPAWNS = List.of(
-        LOBBY_AVATAR_CENTER.add(-2.5, 0, 0), LOBBY_AVATAR_CENTER, LOBBY_AVATAR_CENTER.add(2.5, 0, 0));
+    private static final List<Pos> LOBBY_SPAWNS = List.of(LOBBY_AVATAR_CENTER.add(-2.5, 0, 0), LOBBY_AVATAR_CENTER, LOBBY_AVATAR_CENTER.add(2.5, 0, 0));
     private static final Tag<Integer> LOBBY_SEAT = Tag.Integer("lobbySeat").defaultValue(0);
     private static final int MAX_INSTANCE_PLAYERS = 3;
     private final Map<UUID, Seat> seats = new HashMap<>();

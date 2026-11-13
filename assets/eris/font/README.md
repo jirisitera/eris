@@ -1,5 +1,12 @@
 # Shader fonts
 
+The emote wheel uses a separate smooth, proportional Segoe UI atlas at
+`textures/effect/emote_font.png`. Its ASCII cells are 48 by 72 pixels, with
+16 columns. Regenerate the bitmap and matching `post/emote_font.glsl` advances
+together on Windows with `pwsh -File tools/generate-emote-font.ps1`.
+Wheel names and descriptions live in `post/emotes.glsl`; they use packed ASCII
+labels and do not affect the other shader fonts.
+
 Server code can display transitions with `com.japicraft.service.TransitionService`:
 
 ```java
